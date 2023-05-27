@@ -47,9 +47,6 @@ static int attach_stream_buffer(uint8_t stream_id, uint8_t subtype, int shmid);
 
 static void handle_events(MsgEventQ_t *q, MsgEvent_t *ev);
 
-
-static char *program_name;
-
 static FILE *outfile;
 
 static int ctrl_data_shmid;
@@ -72,17 +69,16 @@ static int prev_scr_nr = 0;
 
 void usage()
 {
-  fprintf(stderr, "Usage: %s  [-m <msgid>]\n", 
-	  program_name);
+  fprintf(stderr, "Usage: %s  [-m <msgid>]\n",
+	  "ogle");
 }
 
 
 int main(int argc, char *argv[])
 {
   MsgEvent_t ev;
-  int c; 
-  program_name = argv[0];
-  
+  int c;
+
   /* Parse command line options */
   while ((c = getopt(argc, argv, "m:h?")) != EOF) {
     switch (c) {
@@ -105,20 +101,20 @@ int main(int argc, char *argv[])
 
   // test
   outfile = fopen("/tmp/ac3", "w");
-  
+
 
   if(msgqid != -1) {
     if((msgq = MsgOpen(msgqid)) == NULL) {
       fprintf(stderr, "ac3wrap: couldn't get message q\n");
       exit(-1);
     }
-    
+
     ev.type = MsgEventQRegister;
     ev.registercaps.capabilities = DECODE_AC3_AUDIO;
     if(MsgSendEvent(msgq, CLIENT_RESOURCE_MANAGER, &ev, 0) == -1) {
       DPRINTF(1, "ac3wrap: register capabilities\n");
     }
-    
+
     while(ev.type != MsgEventQDecodeStreamBuf) {
       if(MsgNextEvent(msgq, &ev) != -1) {
 	handle_events(msgq, &ev);
@@ -140,7 +136,7 @@ int main(int argc, char *argv[])
 
 static void handle_events(MsgEventQ_t *q, MsgEvent_t *ev)
 {
-  
+
   switch(ev->type) {
   case MsgEventQNotify:
     DPRINTF(1, "ac3wrap: got notify\n");
@@ -156,7 +152,7 @@ static void handle_events(MsgEventQ_t *q, MsgEvent_t *ev)
     attach_stream_buffer(ev->decodestreambuf.stream_id,
 			  ev->decodestreambuf.subtype,
 			  ev->decodestreambuf.q_shmid);
-    
+
     break;
   case MsgEventQCtrlData:
     attach_ctrl_shm(ev->ctrldata.shmid);
@@ -185,18 +181,18 @@ static void handle_events(MsgEventQ_t *q, MsgEvent_t *ev)
 int attach_ctrl_shm(int shmid)
 {
   char *shmaddr;
-  
+
   if(shmid >= 0) {
     if((shmaddr = shmat(shmid, NULL, SHM_SHARE_MMU)) == (void *)-1) {
       perror("ac3wrap: attach_ctrl_data(), shmat()");
       return -1;
     }
-    
+
     ctrl_data_shmid = shmid;
     ctrl_data = (ctrl_data_t*)shmaddr;
     ctrl_time = (ctrl_time_t *)(shmaddr+sizeof(ctrl_data_t));
-  }    
-  
+  }
+
   return 0;
 }
 
@@ -206,29 +202,29 @@ int attach_stream_buffer(uint8_t stream_id, uint8_t subtype, int shmid)
   q_head_t *q_head;
 
   fprintf(stderr, "ac3: shmid: %d\n", shmid);
-  
+
   if(shmid >= 0) {
     if((shmaddr = shmat(shmid, NULL, SHM_SHARE_MMU)) == (void *)-1) {
       perror("ac3: attach_decoder_buffer(), shmat()");
       return -1;
     }
-    
+
     stream_shmid = shmid;
     stream_shmaddr = shmaddr;
-  }    
+  }
 
   q_head = (q_head_t *)stream_shmaddr;
   shmid = q_head->data_buf_shmid;
-  
+
   if(shmid >= 0) {
     if((shmaddr = shmat(shmid, NULL, SHM_SHARE_MMU)) == (void *)-1) {
       perror("ac3: attach_data_buffer(), shmat()");
       return -1;
     }
-    
+
     data_buf_shmid = shmid;
     data_buf_shmaddr = shmaddr;
-  }    
+  }
 
   return 0;
 }
@@ -254,7 +250,7 @@ int get_q()
   static clocktime_t time_offset = { 0, 0 };
   static clocktime_t last_rt = { -1, 0 };
   MsgEvent_t ev;
-  
+
   q_head = (q_head_t *)stream_shmaddr;
   q_elems = (q_elem_t *)(stream_shmaddr+sizeof(q_head_t));
   elem = q_head->read_nr;
@@ -262,10 +258,10 @@ int get_q()
   while(MsgCheckEvent(msgq, &ev) != -1) {
     handle_events(msgq, &ev);
   }
-  
+
   if(!q_elems[elem].in_use) {
     q_head->reader_requests_notification = 1;
-    
+
     while(!q_elems[elem].in_use) {
       DPRINTF(1, "ac3wrap: waiting for notification1\n");
       if(MsgNextEvent(msgq, &ev) != -1) {
@@ -277,16 +273,16 @@ int get_q()
   data_head = (data_buf_head_t *)data_buf_shmaddr;
   data_buffer = data_buf_shmaddr + data_head->buffer_start_offset;
   data_elems = (data_elem_t *)(data_buf_shmaddr+sizeof(data_buf_head_t));
-  
+
   data_elem = &data_elems[q_elems[elem].data_elem_index];
-  
+
   PTS_DTS_flags = data_elem->PTS_DTS_flags;
   PTS = data_elem->PTS;
   DTS = data_elem->DTS;
   scr_nr = data_elem->scr_nr;
   /*
     p[0] is the number of frames of audio which have a sync code in this pack
-    p[1]<<8 | p[2] is the starting index of the frame which 
+    p[1]<<8 | p[2] is the starting index of the frame which
       the PTS value belong to
   */
   off = data_elem->packet_data_offset + 4;
@@ -296,11 +292,11 @@ int get_q()
     if(ctrl_time[scr_nr].scr_id < flush_to_scrid) {
 
       q_head->read_nr = (q_head->read_nr+1)%q_head->nr_of_qelems;
-      
+
       // release elem
       data_elem->in_use = 0;
       q_elems[elem].in_use = 0;
-      
+
       if(q_head->writer_requests_notification) {
 	q_head->writer_requests_notification = 0;
 	ev.type = MsgEventQNotify;
@@ -314,11 +310,11 @@ int get_q()
       flush_to_scrid = -1;
     }
   }
- 
-  
+
+
   if(ctrl_data->speed == 1.0) {
     clocktime_t real_time, scr_time;
-    
+
     clocktime_get(&real_time);
     if(PTS_DTS_flags & 0x2) {
       PTS_TO_CLOCKTIME(scr_time, PTS);
@@ -326,12 +322,12 @@ int get_q()
 
     if(ctrl_time[scr_nr].sync_master <= SYNC_AUDIO) {
       ctrl_time[scr_nr].sync_master = SYNC_AUDIO;
-      
+
       if(ctrl_time[scr_nr].offset_valid == OFFSET_NOT_VALID) {
 	if(PTS_DTS_flags & 0x2) {
 	  clocktime_t tmptime;
 
-	  
+
 	  // time_offset is our guess to how much is in the output q
 
 	  if(TIME_S(last_rt) != -1) {
@@ -339,21 +335,21 @@ int get_q()
 	  } else {
 	    tmptime = real_time;
 	  }
-	  
+
 	  {
 	    clocktime_t corr = { 0, 100000000 };
 	    timeadd(&tmptime, &tmptime, &corr);
-	    
+
 	  }
-	  
+
       	  set_sync_point(&ctrl_time[scr_nr],
 			 &tmptime,
 			 &scr_time,
 			 ctrl_data->speed);
 	}
-	
+
       }
-      
+
       if(PTS_DTS_flags & 0x2) {
 	calc_realtime_left_to_scrtime(&time_offset, &real_time,
 				      &scr_time,
@@ -361,9 +357,9 @@ int get_q()
       }
 
       /*
-       * primitive resync in case output buffer is emptied 
+       * primitive resync in case output buffer is emptied
        */
-      
+
       if(TIME_SS(time_offset) < 0 || TIME_S(time_offset) < 0) {
 	TIME_S(time_offset) = 0;
 	TIME_SS(time_offset) = 0;
@@ -373,7 +369,7 @@ int get_q()
 		       &scr_time,
 		       ctrl_data->speed);
       }
-      
+
     }
     if(PTS_DTS_flags & 0x2) {
       calc_realtime_from_scrtime(&last_rt,
@@ -390,16 +386,16 @@ int get_q()
 	fprintf(stderr, "more than 10 secs in audio output buffer, somethings wrong?\n");
       }
     }
-    
-    
+
+
     if(ctrl_data->speed == 1.0) {
       clocktime_t real_time, scr_time;
-      
+
       PTS_TO_CLOCKTIME(scr_time, PTS);
       clocktime_get(&real_time);
-      
+
       /** TODO this is just so we don't buffer alot in the pipe **/
-      
+
       {
 #ifndef HAVE_CLOCK_GETTIME
 	struct timespec bepa;
@@ -407,29 +403,29 @@ int get_q()
 	timesub(&apa, &time_offset, &apa);
 	bepa.tv_sec = apa.tv_sec;
 	bepa.tv_nsec = apa.tv_usec*1000;
-	
+
 	if(bepa.tv_nsec > 10000 || bepa.tv_sec > 0) {
 	  nanosleep(&bepa, NULL);
 	}
 #else
-	
+
 	clocktime_t apa = {0, 100000000};
 	timesub(&apa, &time_offset, &apa);
-	
+
 	if(TIME_SS(apa) > 10000000 || TIME_S(apa) > 0) {
 	  nanosleep(&apa, NULL);
 	}
-	
-#endif 
+
+#endif
       }
     }
   }
 
   prev_scr_nr = scr_nr;
-  
+
   q_head->read_nr = (q_head->read_nr+1)%q_head->nr_of_qelems;
-  
-  
+
+
   if(ctrl_data->speed == 1.0) {
     fwrite(data_buffer+off, len, 1, outfile);
   } else {
@@ -439,7 +435,7 @@ int get_q()
   // release elem
   data_elem->in_use = 0;
   q_elems[elem].in_use = 0;
-  
+
   if(q_head->writer_requests_notification) {
     q_head->writer_requests_notification = 0;
     ev.type = MsgEventQNotify;
@@ -447,6 +443,6 @@ int get_q()
       fprintf(stderr, "ac3wrap: couldn't send notification\n");
     }
   }
-  
+
   return 0;
 }
