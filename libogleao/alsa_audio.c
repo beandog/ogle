@@ -251,6 +251,7 @@ static int ctl_set_iec60958(alsa_instance_t *i)
     snd_ctl_close(ctl_handle);
   
   __diga_end:
+  ;
   }
   
   return 0;
