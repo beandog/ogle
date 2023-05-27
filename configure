@@ -13063,7 +13063,7 @@ echo $ECHO_N "checking for alsa version... $ECHO_C" >&6
 
 #include <sys/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
-#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR==5)
+#if (SND_LIB_MAJOR==0 && SND_LIB_MINOR==5)
 AP_maGiC_VALUE
 #endif
 #endif

@@ -495,7 +495,7 @@ if test "x$enable_alsa" != xno; then
           [ 
 #include <sys/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
-#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR==5)
+#if (SND_LIB_MAJOR==0 && SND_LIB_MINOR==5)
 AP_maGiC_VALUE
 #endif
 #endif
