@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo run $* > /tmp/ogle_vout.$$
+
+xterm -e gdb -x /tmp/ogle_vout.$$ $DVDP_ROOT/ogle_vout
+rm /tmp/ogle_vout.$$

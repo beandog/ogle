@@ -1,0 +1,41 @@
+Björn Englund <d4bjorn@dtek.chalmers.se>
+Most of the system, control, comunication, mpeg demultiplexing, 
+mpeg video decoding, work on the IFO format. 
+Håkan Hjort <d95hjort@dtek.chalmers.se>
+Mpeg video decoding, VM, IFO and navigation, random hacking all over the place.
+Vilhelm Bergman <d96v@dtek.chalmers.se>
+The entire GUI, the screen shoot code and various hacking.
+Martin Norbäck <d95mback@dtek.chalmers.se>
+Ported ogle to automake, did the first Xv output, lots of work on the
+VM instructions and the fallback implementation of part of mediaLib.
+Björn Augustsson <d3august@dtek.chalmers.se>
+Hacking and moral support when we were just getting started in late 1999.
+
+See CVS logs for more details.
+
+Thanks also to the following how code or idees we have used either
+directly or indirectly:
+
+Aaron Holtzman, ac3dec
+Michel Lespinasse, liba52
+David I Lehn, MMX motion compensation code (for mpeg2dec)
+Franck Sicard, wrote YUV to RGB (for mpeg2dec)
+Eric Smith, vobdump
+Billy Biggs, dvd input and general hacking on libdvdread
+Christian Wolff, dvd udf code for libdvdread
+Samuel Hocevar, the VideoLAN subpicure code
+Marc van Woerkom, FreeBSD patches for libdvdread
+Björn Sandell, OpenBSD patches for libdvdread
+Øyvind Kolbu, FreeBSD fixes for Ogle
+Bernd Ernesti, NetBSD patches for Ogle and libdvdread
+Charles M. Hannum, AltiVec patches and other speed improvements
+Mario Sergio Fujikawa Ferreira, FreeBSD fixes
+Marc Espie, Simple sample rate conversion 48->44.1 kHz in libao, OpenBSD fixes
+Mikael Hedin, making debian debs.
+David Price, speaker configuration patch to allow different speaker setups.
+Arjen Hommersom, exporting allowed User Opreations flags to dvdcontrol.
+Maik Schulz, sent a few DVD from a game magazine that refused to work.
+Dan Weeks, have provided us with a couple of DVDs.
+Torgeir Veimo, ALSA sound support.
+Martin Piskernig, several patches for improving the usability and features
+Kai Vehmanen, compile fixs for egcs

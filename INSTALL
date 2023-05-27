@@ -1,0 +1,37 @@
+Installation
+============
+
+  1. `cd' to the directory containing the package's source code.
+     Type `./configure' to configure the package for your system.
+
+     There are three package specific configure options.
+       --with-dvdread=path  specify where libdvdread is installed
+       --with-libmlib=path     specify where mediaLib is installed
+       --with-libjpeg=path     specify where libjpeg is installed
+
+     You might need to use these if you have installed libdvdread,
+     mediaLib or libjpeg in a nonstandard location.  Most users will not 
+     need togive any of these options.  Look at the output from configure
+     to see if it has found the library.  Libdvdread and libjpeg are 
+     required for correct operation so configure will issue an error if 
+     it fails to find them.  MediaLib on the other hand is optional and
+     so ogle will compile fine without it being present. MediaLib is 
+     written and provided by Sun and is only available for the Solaris 
+     operating system.
+
+  2. Type `make' to compile the package.
+
+  3. Type `make install' to install the programs and any data files and
+     documentation.
+
+  4. You can remove the program binaries and object files from the
+     source code directory by typing `make clean'.  To also remove the
+     files that `configure' created (so you can compile the package for
+     a different kind of computer), type `make distclean'.  There is
+     also a `make maintainer-clean' target, but that is intended mainly
+     for the package's developers.  If you use it, you may have to get
+     all sorts of other programs in order to regenerate files that came
+     with the distribution.
+
+For other information about configure or make see their respective 
+documentation. 

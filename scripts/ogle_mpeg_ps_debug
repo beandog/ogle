@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo run $* > /tmp/ogle_mpeg_ps.$$
+
+xterm -e gdb -x /tmp/ogle_mpeg_ps.$$ $DVDP_ROOT/ogle_mpeg_ps
+rm /tmp/ogle_mpeg_ps.$$

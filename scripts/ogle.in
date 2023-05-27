@@ -1,0 +1,361 @@
+#!/bin/sh
+# @configure_input@
+
+create_pipe() { 
+    if [ ! -p $1 ]; then
+	rm -f $1;
+        # So any other user can start the program / rm the pipes
+        mkfifo $1; chmod 666 $1;
+    fi
+    # chgrp dvd $1;
+}
+
+create_pipe "/tmp/ac3"
+create_pipe "/tmp/audio"
+
+ostype=`uname`
+d_suf="_debug"
+debug="0"
+nav_debug=""
+audio_debug=""
+vout_debug=""
+cli_debug=""
+ctrl_debug=""
+gui_debug=""
+mpeg_ps_debug=""
+mpeg_vs_debug=""
+
+check="0"
+param=""
+
+if [ -z "$OGLE_DLEVEL" ]; then
+    OGLE_DLEVEL=3
+fi
+
+for p in $*; do
+    if [ $p = "--debug" ]; then
+	debug="1"
+        OGLE_DLEVEL=5
+	DVDCSS_VERBOSE=2
+	export DVDCSS_VERBOSE
+    elif [ $p = "--check" ]; then
+	debug="1"
+	check="1"
+    elif [ x`echo $p | grep -- "--debug-"` != x"" ]; then
+	if [ $p = --debug-nav ]; then
+	    nav_debug=$d_suf
+	elif [ $p = --debug-audio ]; then
+	    audio_debug=$d_suf
+	elif [ $p = --debug-vout ]; then
+	    vout_debug=$d_suf
+	elif [ $p = --debug-cli ]; then
+	    cli_debug=$d_suf
+	elif [ $p = --debug-ctrl ]; then
+	    ctrl_debug=$d_suf
+	elif [ $p = --debug-gui ]; then
+	    gui_debug=$d_suf
+	elif [ $p = --debug-mpeg_ps ]; then
+	    mpeg_ps_debug=$d_suf
+	elif [ $p = --debug-mpeg_vs ]; then
+	    mpeg_vs_debug=$d_suf
+	elif [ $p = --debug-all ]; then
+	    nav_debug=$d_suf
+	    audio_debug=$d_suf
+	    vout_debug=$d_suf
+	    cli_debug=$d_suf
+	    ctrl_debug=$d_suf
+	    gui_debug=$d_suf
+	    mpeg_ps_debug=$d_suf
+	    mpeg_vs_debug=$d_suf
+	else
+	    echo "$0: invalid option $p"
+	    exit
+	fi
+    else
+	param="$param $p"
+    fi
+done
+
+export OGLE_DLEVEL
+
+
+if [ "$debug" = "1" ]; then
+ # information on the build 
+ echo "Build: @BUILDINFO@"
+ # and the os version we are running on
+ runtime="Runtime: `uname -m -r -s -v`"
+ runtime="${runtime} `uname -p 2> /dev/null`"
+ echo "$runtime"
+
+ case $ostype in
+     "Linux")
+
+         #cpu information
+	 cpuinfo=`cat /proc/cpuinfo | sed s/\.*/\&,/`
+	 echo "cpuinfo:"
+	 echo $cpuinfo
+	 echo ""
+	 
+         #check for bad kernels
+	 linux_version="`uname -r`"
+	 if [ "$linux_version" = "2.4.10" ]; then
+	     echo ""
+	     echo "WARNING: This kernel ($linux_version) is known to have problems with DVD:s."
+	     echo ""
+	 fi
+	 echo $linux_version | grep "2.4.9-" >/dev/null
+	 if [ "$?" = "0" ]; then
+	     echo ""
+	     echo "WARNING: There has been some DVD-troubles with modified 2.4.9-kernels."
+	     echo ""
+	 fi
+	 
+         #check for dvd drives
+	 PROCFILE="/proc/sys/dev/cdrom/info"
+	 if [ ! -r "$PROCFILE" ]; then
+	     echo "File not found: $PROCFILE"
+	     echo "No CD or DVD devices on this system or cdrom module not loaded?"
+	 else
+	     DEVLIST=`cat $PROCFILE | grep 'drive name:' | cut -d':' -f 2-`
+	     
+	     ISDVDLIST=`cat $PROCFILE \
+                        | grep 'Can read DVD:' \
+                        | cut -d':' -f 2-`
+	     
+	     dvd_dev_f() {
+	         for dev in $DEVLIST; do
+                     if [ "$1" = "1" ]; then
+                         DVD_DEV="$DVD_DEV $dev"
+		     fi
+		     shift
+                 done
+             }
+	     
+             dvd_dev_f $ISDVDLIST
+
+             #is /dev/dvd set?
+	     dev="/dev/dvd"
+	     while [ -h $dev ]; do
+		 nextdev=`ls -l $dev | cut -d'>' -f 2`
+		 nextdev="`echo $nextdev`"
+		 echo  "$dev -> $nextdev"
+		 abspath="`echo $nextdev | cut -b1`"
+		 if [ "$abspath" = "/" ]; then
+		     dev="`echo $nextdev`"
+		 else
+		     dev="`dirname $dev`/$nextdev"
+		 fi
+	     done
+	     if [ ! -r "$dev" ]; then
+		 echo "`ls -l $dev`"
+		 echo "WARNING: $dev is not readable"
+		 echo ""
+	     fi
+	     
+             #ide devices
+	     ide_devices="`ls /proc/ide | grep hd`"
+             #ide cd/dvd devices
+	     for dev in $ide_devices; do
+		 driver="`cat /proc/ide/$dev/driver | cut -d' ' -f 1`"
+		 if [ "$driver"  = "ide-cd" ]; then
+		     ide_cd_dev="$ide_cd_dev $dev"
+		 elif [ "$driver" = "ide-scsi" ]; then
+		     ide_scsi_cd_dev="$ide_scsi_cd_dev $dev"
+		 fi
+	     done
+             #the devices that can read DVD
+	     echo  -n "Valid DVD devices:"
+	     if [ -z "$DVD_DEV" ]; then
+		 echo ""
+		 echo "WARNING: No DVD devices found"
+	     fi
+	     for dev in $DVD_DEV; do
+		 scsi_dev="`echo $dev | grep sr`"
+		 if [ -n "$scsi_dev" ]; then
+		     scsi_nr="`echo $dev | cut -d'r' -f 2`"
+		     if [ -b "/dev/sr$scsi_nr" ]; then
+			 echo -n " /dev/sr$scsi_nr"
+		     elif [ -b "/dev/scd$scsi_nr" ]; then
+			 echo -n " /dev/scd$scsi_nr"
+		     else
+			 echo -n " ** block device is missing: /dev/sr$scsi_nr **"
+		     fi
+		 else
+		     dev="/dev/$dev"
+		     if ! [ -a $dev ]; then
+			 echo -n "** block device is missing: $dev **"
+		     elif ! [ -h $dev ]; then
+			 echo -n " $dev"
+		     fi
+		     while [ -h $dev ]; do
+			 nextdev=`ls -l $dev | cut -d'>' -f 2`
+			 nextdev="`echo $nextdev`"
+			 echo  " $dev -> $nextdev"
+			 abspath="`echo $nextdev | cut -b1`"
+			 if [ "$abspath" = "/" ]; then
+			     dev="`echo $nextdev`"
+			 else
+			     dev="`dirname $dev`/$nextdev"
+			 fi
+		     done
+		     
+		 fi
+	     done
+	     echo ""
+	     for dev in $ide_scsi_cd_dev; do
+		 echo "/dev/$dev is running ide-scsi (`cat /proc/ide/$dev/model`)"
+		 if ! [ -a /dev/$dev ]; then
+		     echo " ** block device is missing: $dev **"
+		     echo " This may be because you are running devfs,"
+		     echo " in this case to turn on/off dma with hdparm"
+		     echo " you should use the corresponding ide device node"
+		     echo " /dev/ide/hostX/busY/targetZ/lun0/generic,"
+		     echo " where you set X,Y,Z to the apropriate numbers."
+		     echo " /dev/hdb would be: /dev/ide/host0/bus0/target1/lun0/generic"
+		     echo " hdc: /dev/ide/host0/bus1/target0/..."
+		     echo " hdd: /dev/ide/host0/bus1/target1/..."
+		 fi
+		 
+		 if ! [ -a /proc/ide/$dev/settings ]; then
+		     echo "/proc/ide/$dev/settings does not exist"
+		 elif [ -r /proc/ide/$dev/settings ]; then
+		   dma_use="`cat /proc/ide/$dev/settings | grep using_dma`"
+		   dma_use="`echo $dma_use | cut -d ' ' -f 2`"
+
+		   if [ -z "$dma_use" ]; then
+		       echo "WARNING: Could not get DMA state for /dev/$dev"
+		   elif [ "$dma_use" = "1" ]; then
+		       echo "DMA is on for /dev/$dev"
+		   else
+		       echo ""
+		       echo "WARNING: DMA is OFF for /dev/$dev"
+		       echo ""
+		   fi
+		 else
+		     echo "WARNING: Cannot read /proc/ide/$dev/settings, need to be root to do that?"
+		 fi
+	     done
+	     
+             #ide device information
+	     hdparm_path="/sbin /usr/sbin"
+	     hdparm_found=0
+	     hpath_empty=0
+	     hdparm_version=`hdparm -V 2> /dev/null`
+	     if [ "$?" != "0" ]; then
+		 for hpath in $hdparm_path; do
+		     if $hpath/hdparm -V 2>/dev/null; then
+			 hdparm_found=1
+			 break
+		     fi
+		 done
+	     else
+		 hdparm_found=1
+		 hpath_empty=1
+		 echo "$hdparm_version"
+	     fi
+
+	     if [ "$hpath_empty" = "1" ]; then
+		 hcmd="hdparm"
+	     else
+		 hcmd="$hpath/hdparm"
+	     fi
+
+	     if [ "$hdparm_found" = "1" ]; then
+		 for dev in $DVD_DEV; do
+		     ide_dev="`echo $dev | grep hd`"
+		     if [ -n "$ide_dev" ]; then
+			 dmainfo="`$hcmd /dev/$dev 2>/dev/null | grep using_dma | cut -d'=' -f 2 | cut -d\( -f 1`"
+			 dmainfo="`echo $dmainfo`"
+			 if [ ! -r /dev/$dev ]; then
+			     echo "WARNING: Cannot read /dev/$dev, need to be root to do that?"
+			 fi
+			 if [ -z "$dmainfo" ]; then
+			     echo "WARNING: Could not get DMA state for /dev/$dev"
+			 elif [ "$dmainfo" = "1" ]; then
+			     echo "DMA is on for /dev/$dev"
+			 else
+			     echo ""
+			     echo "WARNING: DMA is OFF for /dev/$dev"
+			     echo ""
+			 fi
+			 $hcmd /dev/$dev 2>/dev/null
+		     fi
+		 done
+		 for dev in $ide_scsi_cd_dev; do
+		     dmainfo="`$hcmd /dev/$dev 2>/dev/null | grep using_dma | cut -d'=' -f 2 | cut -d\( -f 1`"
+		     dmainfo="`echo $dmainfo`"
+		     if [ ! -r /dev/$dev ]; then
+			 echo "WARNING: Cannot read /dev/$dev, need to be root to do that?"
+		     fi
+		     if [ -z "$dmainfo" ]; then
+			 echo "WARNING: Could not get DMA state for /dev/$dev"
+		     elif [ "$dmainfo" = "1" ]; then
+			 echo "DMA is on for /dev/$dev"
+		     else	       
+			 echo ""
+			 echo "WARNING: DMA is OFF for /dev/$dev"
+			 echo ""
+		     fi
+		     $hcmd /dev/$dev 2>/dev/null
+		 done
+	     else
+		 echo "WARNING: hdparm not found"
+	     fi  
+	 fi
+	 
+	 ;;
+     "SunOS")
+	 sysinfo -class device
+	 fpversion
+	 ;;
+ esac
+fi
+
+if [ "$check" = "1" ]; then
+    exit
+fi
+# This is were all the helper programs are placed
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+DVDP_ROOT=@libdir@/@PACKAGE@
+
+export DVDP_ROOT
+DVDP_CTRL=$DVDP_ROOT/ogle_ctrl$ctrl_debug
+export DVDP_CTRL
+DVDP_DEMUX=$DVDP_ROOT/ogle_mpeg_ps$mpeg_ps_debug
+export DVDP_DEMUX
+DVDP_CLI_UI=$DVDP_ROOT/ogle_cli$cli_debug
+export DVDP_CLI_UI
+if [ -z "$DVDP_UI" -o ! -x "$DVDP_UI" ]; then
+if [ -x $DVDP_ROOT/ogle_gui$gui_debug ]; then
+DVDP_UI=$DVDP_ROOT/ogle_gui$gui_debug
+else
+DVDP_UI=$exec_prefix/bin/ogle_gui$gui_debug
+fi
+fi
+export DVDP_UI
+#DVDP_AC3=$DVDP_ROOT/ogle_ac3_p
+#DVDP_AC3=$DVDP_ROOT/ogle_a52
+DVDP_AC3=$DVDP_ROOT/ogle_audio$audio_debug
+export DVDP_AC3
+DVDP_LPCM=$DVDP_ROOT/ogle_audio$audio_debug
+export DVDP_LPCM
+DVDP_MPEGAUDIO=$DVDP_ROOT/ogle_audio$audio_debug
+export DVDP_MPEGAUDIO
+DVDP_DTSAUDIO=$DVDP_ROOT/ogle_audio$audio_debug
+export DVDP_DTSAUDIO
+DVDP_VIDEO=$DVDP_ROOT/ogle_mpeg_vs$mpeg_vs_debug
+export DVDP_VIDEO
+DVDP_VMG=$DVDP_ROOT/ogle_nav$nav_debug
+#DVDP_VMG=RUNNING
+export DVDP_VMG
+#DVDP_SPU=$DVDP_ROOT/subpicture/spu_wrap
+DVDP_SPU=$DVDP_ROOT/ogle_vout$vout_debug
+export DVDP_SPU
+DVDP_VIDEO_OUT=$DVDP_ROOT/ogle_vout$vout_debug
+export DVDP_VIDEO_OUT
+if [ -x "$DVDP_UI" ]; then
+  $DVDP_CTRL -u gui $param;
+else
+  $DVDP_CTRL -u cli $param;
+fi;

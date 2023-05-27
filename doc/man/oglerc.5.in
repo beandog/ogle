@@ -1,0 +1,381 @@
+'\" t
+.TH OGLERC 5
+.SH NAME
+oglerc \- ogle configuration file
+.SH DESCRIPTION
+The oglerc file is a configuration file for ogle.
+There is one system-wide file in ${prefix}/share/oglerc and an
+optional user file $HOME/.oglerc which overrides system settings.
+.br
+The file is written in XML, with a DTD in an external file.
+.br
+Look in the system-wide oglerc for available settings.
+.br
+The configuration is divided into four main groups:
+dvd, audio, video and user_interface.
+
+These are the available tags:
+
+<ogle_conf>
+
+
+
+  <dvd>
+    <nav>
+      <defaults>
+        <DefaultMenuLanguage>en</DefaultMenuLanguage>
+        <DefaultAudioLanguage>en</DefaultAudioLanguage>
+        <DefaultSubtitleLanguage>en</DefaultSubtitleLanguage>
+        <ParentalCountry>US</ParentalCountry>
+        <ParentalLevel>15</ParentalLevel>
+        <PlayerRegion>1</PlayerRegion>
+      </defaults>
+    </nav>
+    <device>
+      <path>/cdrom/cdrom0</path>
+    </device>
+  </dvd>
+
+The <DefaultMenuLanguage>, <DefaultAudioLanguage> and <DefaultSubtitleLanguage>
+tags should be set to your preferred ISO-639 2-character language code.
+Depending on how the DVD uses these values you might get different
+languages when playing the dvd.
+
+<ParentalCountry> and <ParentalLevel> are used by the DVD to choose
+what you will be allowed to watch.
+
+<PlayerRegion> should be set to the region the DVD expects to be played
+in. An incorrect region might result in that the disc will refuse to play or
+show a screen telling you that you have the wrong region.
+This setting has nothing to do with the region setting of your
+DVD-ROM drive.
+
+<path> is the path to your DVD-ROM drive
+
+
+
+  <audio>
+    <device>
+      <driver>oss</driver>
+      <path>/dev/audio</path>
+      <alsa>
+        <name>default</name>
+      </alsa>
+    </device>
+    <speakers>
+      <channel_config>
+	<chtype>Left</chtype>
+	<chtype>Right</chtype>
+      </channel_config>	
+      <channel_config>
+	<chtype>Left</chtype>
+	<chtype>Right</chtype>
+	<chtype>RearLeft</chtype>
+	<chtype>RearRight</chtype>
+	<chtype>Center</chtype>
+	<chtype>LFE</chtype>
+      </channel_config>	
+    </speakers>
+    <liba52>
+      <downmix_level>1.5</downmix_level>
+      <drc>no</drc>
+      <stereo_mode>dolby</stereo_mode>
+    </liba52>
+    <sync>
+      <type>odelay</type>
+      <offset>0</offset>
+    </sync>
+  </audio>
+
+<driver>
+  The audio driver to use, it can be one of 'oss', 'alsa', 'solaris', 'obsd' or 'null'.
+  If you choose 'null' no audio will be output. This can be useful if you don't have a soundcard.
+
+<path>
+  The path to your audio device.
+
+<alsa><name>
+  The name of the alsa device when using alsa.
+
+<speakers>
+.RS 2
+Here you can define what audio channels should be played on your audio card.
+An empty speakers will try to get the info from the soundcard, most cards don't support this.
+.br
+<channel_config>
+.RS 4
+Defines a set of channels (number and types)
+Several channel_configs can be used in which case the first matching will
+be chosen. If none matches the last config will be used.
+.br
+<chtype>
+.RS 2
+Defines the type of the channel. Can be one of:
+.br
+Left, Right, Center, LFE, RearLeft, RearRight, RearCenter, 0.
+.br
+Where 0 represents a channel that should be written just silence to.
+The order of the chtypes is the order of the channels on the soundcard.
+.RE
+<liba52>
+.RS 2
+Contains liba52 specific settings (for ac3 audio)
+.br
+<downmix_level>
+.RS 4
+Is used to multiply the samples when downmixing from multichannel sound to stereo. For a full 5.1 track the value should be somewhere around 1.5 if you want to increase the volume a bit. Be aware that using this setting can result in clipping if values larger than 1.0 are used. This has no effect on stereo tracks. Values lower than 1.0 will decrease the volume.
+.RE
+<drc>
+.RS 4
+This will turn on dynamic range compression if set to 'yes'. DRC will lower the volume of loud sounds and raise the volume for soft sounds.
+.RE
+<stereo_mode>
+.RS 4
+This will decide what stereo mix you will get from a multi channel track if you have a channel config with just Left and Right. 'main' will just pick the left and right main channels. 'front' will mix in the center channel also. 'dolby' will make a dolby surround (stereo) mix of all the channels.
+.RE
+.RE
+.RE
+.RE
+<sync>
+.RS 2
+Various options for synchronization between audio and video.
+.br
+<type>
+.RS 4
+Can be one of 'odelay', 'clock'.
+odelay will be more exact if the sound driver supports it, if not it should fall back to clock.
+clock is just measuring time and hoping the soundcards internal clock doesn't drift to much compared to the cpu.
+.RE
+<offset>
+.RS 4
+Is measured in milliseconds and can be from -999 to 999.
+This is used to change the sync forwards/backwards. A positive value will output audio a later time compared to the video, a negative will output audio earlier.
+.RE
+.RE 
+<video>
+  <display>
+    <name></name>
+    <geometry>
+      <width></width>
+      <height></height>
+    </geometry>
+    <resolution>
+      <horizontal_pixels></horizontal_pixels>
+      <vertical_pixels></vertical_pixels>
+    </resolution>
+    <geometry_src>X11</geometry_src>
+    <resolution_src>Xinerama</resolution_src>
+    <switch_resolution>no</switch_resolution>
+    <initial_state>
+      <fullscreen>no</fullscreen>
+    </initial_state>
+  </display>
+</video>
+
+<geometry_src> tells where to get the geometry from.
+
+The geometry is the size (in millimeters) of your display.
+It can be set to "X11" or "user" not including the "".
+If set to "X11" the geometry will be delivered by your X-server.
+If your X-server isn't set up correctly it might deliver the wrong geometry
+resulting in an incorrect aspect (the picture will be stretched in some
+direction).
+
+You can set the geometry manually by choosing "user" and filling in
+the <width> and <height> tags in the <geometry> section.
+
+Example:
+ <geometry>
+   <width>400</width>
+   <height>300</height>
+ </geometry>
+
+this tells that you have a monitor which has a width of 400 mm
+and a hight of 300 mm.
+
+The resolution is the number of pixels (in x and y direction) your display has.
+
+<resolution_src> tells where to get the resolution from.
+
+It can be set to "X11", "XF86VidMode", "Xinerama" or "user", not including
+the "".
+
+.TS
+;
+ll.
+"X11"	the resolution is taken from the X-server,
+"XF86VidMode"	from the XF86VidMode extension (if you change resolution with <ctrl><alt><+/->)
+"Xinerama"	if you use the Xinerama extension
+"user"	if you want to force it manually to a certain resolution.
+.TE
+
+When set to "user" you must fill in the correct values in the
+<horizontal_pixels> and <vertical_pixels> tags.
+
+By using the "user" mode of both the <resolution> and <geometry> you
+can change the aspect of the picture and size.
+As an example, if you are using a tv-out output on your gfx-card
+to show the picture on a widescreen TV the following can be used.
+Assuming your gfx-card outputs 720x576 pixels to the tv-out when
+you have set the gfx-card to a resolution of 800x600.
+
+ <geometry>
+   <width>1600</width>
+   <height>900</height>
+ </geometry>
+
+The geometry should be the size of your tv in millimeters, the exact
+size isn't that important, as long as the proportions are correct.
+1600/900 == 16/9 == widescreen tv.
+For a normal tv you should use something like 400/300.
+
+ <resolution>
+   <horizontal_pixels>720</horizontal_pixels>
+   <vertical_pixels>576</vertical_pixels>
+ </resolution>
+
+This tells us to only use 720x576 pixels in fullscreen and not the entire
+space available on your monitor/desktop.
+
+<initial_state> contains information about the state of the video window
+at start up. If <fullscreen> is set to yes, the video will start in fullscreen
+mode (default is no).
+
+  <user_interface>
+    <bookmarks>
+      <autosave>yes</autosave>
+      <autoload>no</autoload>
+    </bookmarks>
+
+Autosave saves the position where you exit.
+Autoload starts the dvd at a previously autosaved position if available.
+
+    <digit_timeout>2</digit_timeout>
+Timeout between digits in a number entered.
+If you enter '1', '2' and the time between '1' and '2' is more than
+the timeout the final number will be 2,
+if the time is less the number will be 12.
+
+    <number_timeout>5</number_timeout>
+Timeout between a number entered and the action.
+If a number is entered and the time until the associated action key is pressed is greater than the timeout the number will not be used (reset).
+
+    <default_skiptime>60</default_skiptime>
+The default time used for the SkipForward/Backward actions
+
+    <prevpg_timeout>1</prevpg_timeout>
+When PrevPG(previous chapter) is pressed the first jump is to the beginning of the current chapter and if PrevPG is pressed again within the timeout the next jump will be to the beginning of the previous chapter. If prevpg_timeout is set to 0 the jump will be directly to the previous chapter. The timeout is in seconds.
+
+    <bindings>
+      <!-- Each binding contains an action and one or more keys.
+           The keys are given as X11 keysyms -->
+          <b>     
+            <action>Play</action>
+            <key>p</key>
+            <key>KP_Enter</key>
+          </b>
+      </bindings>
+  </user_interface>
+
+Each binding binds a number of keys to an action.
+The keys are normal X11 keysyms.
+The available actions are the following:
+
+.TS
+;
+l1l1l
+---
+lll.
+action	default keys	description
+Play	p	Starts playback
+PauseToggle	space	Toggles pause on and off
+Stop		Stops playback
+Faster	period (.)	Increases the playback speed
+Slower	comma (,)	Decreases the playback speed
+NextPG	greater (>)	Jumps to the next program
+PrevPG	less (<)	Jumps to the previous program
+UpperButton	Up (Arrow up)	Used in navigating the menus
+LowerButton	Down (Arrow down)	Used in navigating the menus
+RightButton	Right (Arrow right)	Used in navigating the menus
+LeftButton	Left (Arrow left)	Used in navigating the menus
+ButtonActivate	Return, KP_Enter	Activates the selected button
+TitleMenu	t	Jumps to the Title Menu
+RootMenu	r	Jumps to the Root Menu
+AudioMenu	a	Jumps to the Audio Menu
+AngleMenu	A	Jumps to the Angle Menu
+PTTMenu	P	Jumps to the Chapter Menu
+SubtitleMenu	S	Jumps to the Subtitle Menu
+Resume	c	Resumes playback
+SubtitleToggle	s	Toggles the subtitles on/off
+FullScreenToggle	f, F	Toggles fullscreen mode on/off
+Quit	q, Q	Quits Ogle
+DigitZero	0,KP_0	0 (used to enter numbers)
+DigitOne	1,KP_1	1
+DigitTwo	2,KP_2	2
+DigitThree	3,KP_3	3
+DigitFour	4,KP_4	4
+DigitFive	5,KP_5	5
+DigitSix	6,KP_6	6
+DigitSeven	7,KP_7	7
+DigitEight	8,KP_8	8
+DigitNine	9,KP_9	9
+BookmarkAdd	Insert	Adds a bookmark
+BookmarkRemove	Del	Removes a bookmark (nr)
+BookmarkRestore	b	Restores state from bookmark (nr)
+SkipForward	Next(PageDown)	Skip x seconds forward (nr)
+	KP_Right
+SkipBackward	Prior(PageUp)	Skip x seconds backward (nr)
+	KP_Left
+.TE
+
+</ogle_conf>
+
+The actions above that has (nr) in the description can take an optional number as argument.
+The number is entered with the digit keys and then the key for the action is pressed.
+Example:
+.br
+To jump to the 3rd bookmark for the current dvd press '3' and then 'b'
+When you don't give any number to the bookmark actions they will use
+the entry at the end of the bookmark list by default or when an invalid
+number is entered.
+.br
+Bookmarks will be saved in files in the directory $HOME/.ogle/bookmarks/
+.br
+.br
+The SkipForward and SkipBackward actions use the number argument as the number
+of seconds to skip. The default value is 10 seconds. Entering '30' and then pressing Next(PageDown) will skip 30 seconds forwards. The Skip actions will use the last value entered for any following skips even if no number is entered.
+To get back to the default value, enter 0 and the skip.
+
+
+Non configurable keys:
+  'i', saves a screen shoot (as screenshoot.jpg in pwd)
+  'I', saves a screen shoot with the subpicture overlay intact
+
+
+In addition to the above the arrow buttons and mouse can be used to move around in the DVD menues. Return, the keypad enter and left mouse button may be used to activate a DVD button.
+
+Cropping the picture can be done by pressing the middle mouse button
+at the upper left corner of the crop area and dragging it to the lower right corner and then release the button.
+To uncrop press and release the middle mouse button without dragging it around.
+
+.SH FILES
+$HOME/.oglerc
+.br
+$HOME/.ogle/bookmarks/
+.br
+@CONFIG_FILE@
+.br
+@CONFIG_FILE_DTD@
+.SH AUTHORS
+Björn Englund <d4bjorn@dtek.chalmers.se>
+.br
+Håkan Hjort <d95hjort@dtek.chalmers.se>
+.br
+Vilhelm Bergman <d96v@dtek.chalmers.se>
+.br
+Martin Norbäck <d95mback@dtek.chalmers.se>
+.br
+.SH COPYRIGHT
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+

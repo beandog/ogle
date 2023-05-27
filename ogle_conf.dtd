@@ -1,0 +1,54 @@
+<!ELEMENT DefaultMenuLanguage (#PCDATA)>
+<!ELEMENT DefaultAudioLanguage (#PCDATA)>
+<!ELEMENT DefaultSubtitleLanguage (#PCDATA)>
+<!ELEMENT ParentalCountry (#PCDATA)>
+<!ELEMENT ParentalLevel (#PCDATA)>
+<!ELEMENT PlayerRegion (#PCDATA)>
+<!ELEMENT defaults (DefaultMenuLanguage|DefaultAudioLanguage |
+	DefaultSubtitleLanguage | ParentalCountry | ParentalLevel |
+	PlayerRegion)*>
+
+<!ELEMENT nav (defaults)?>
+<!ELEMENT path (#PCDATA)>
+<!ELEMENT driver (#PCDATA)>
+<!ELEMENT device (path|driver)*>
+<!ELEMENT dvd (nav|device)*>
+
+<!ELEMENT drc (#PCDATA)>
+<!ELEMENT downmix_level (#PCDATA)>
+<!ELEMENT liba52 (downmix_level|drc)*>
+
+<!ELEMENT type (#PCDATA)>
+<!ELEMENT resample (#PCDATA)>
+<!ELEMENT offset (#PCDATA)>
+<!ELEMENT sync (type|resample|offset)*>
+
+<!ELEMENT chtype (#PCDATA)>
+<!ELEMENT channel_config (chtype)*>
+<!ELEMENT speakers (channel_config)*>
+<!ELEMENT audio (device | speakers | liba52 | sync)*>
+
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT width (#PCDATA)>
+<!ELEMENT height (#PCDATA)>
+<!ELEMENT geometry ((width, height) | (height, width))>
+<!ELEMENT horizontal_pixels (#PCDATA)>
+<!ELEMENT vertical_pixels (#PCDATA)>
+<!ELEMENT resolution ((horizontal_pixels, vertical_pixels) |
+        (vertical_pixels, horizontal_pixels))>
+<!ELEMENT geometry_src (#PCDATA)>
+<!ELEMENT resolution_src (#PCDATA)>
+<!ELEMENT switch_resolution (#PCDATA)>
+<!ELEMENT fullscreen (#PCDATA)>
+<!ELEMENT initial_state (fullscreen)?>
+<!ELEMENT display (name, (geometry | resolution | geometry_src |
+        resolution_src | switch_resolution | initial_state)*)>
+<!ELEMENT video (display)*>
+
+<!ELEMENT action (#PCDATA)>
+<!ELEMENT key (#PCDATA)>
+<!ELEMENT b (action, key*)>
+<!ELEMENT bindings (b)*>
+<!ELEMENT user_interface (bindings)?>
+<!ELEMENT ogle_conf (dvd|user_interface|audio|video)*>
+

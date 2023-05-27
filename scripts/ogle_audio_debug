@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo run $* > /tmp/ogle_audio.$$
+
+xterm -e gdb -x /tmp/ogle_audio.$$ $DVDP_ROOT/ogle_audio
+rm /tmp/ogle_audio.$$

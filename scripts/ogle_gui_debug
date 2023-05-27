@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo run $* > /tmp/ogle_gui.$$
+
+xterm -e gdb -x /tmp/ogle_gui.$$ $DVDP_ROOT/ogle_gui
+rm /tmp/ogle_gui.$$

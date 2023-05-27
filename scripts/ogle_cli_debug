@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo run $* > /tmp/ogle_cli.$$
+
+xterm -e gdb -x /tmp/ogle_cli.$$ $DVDP_ROOT/ogle_cli
+rm /tmp/ogle_cli.$$

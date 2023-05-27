@@ -1,0 +1,3 @@
+Add support for navigational timers.
+Make vm.[hc] a self contained part with a good api.
+Rename vmcmd.c to cmd_Print.c and decoder.c to cmd_Eval.c ?

@@ -1,0 +1,882 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(ac3/ac3dec_wrap.c)
+AM_INIT_AUTOMAKE(ogle, 0.9.2)
+dnl AM_CONFIG_HEADER(config.h)
+AM_MAINTAINER_MODE
+AC_CANONICAL_HOST
+
+dnl Checks for programs.
+AC_PROG_CC
+
+dnl AM_DISABLE_SHARED
+AM_PROG_LIBTOOL
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_BIGENDIAN
+AC_C_CONST
+AC_C_ALWAYS_INLINE
+AC_CHECK_GENERATE_INTTYPES([include])
+
+
+dnl Checks for header files.
+AC_CHECK_HEADERS([byteswap.h sys/bswap.h sys/endian.h sys/param.h stropts.h])
+
+dnl Find X Window System
+AC_PATH_XTRA
+saved_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="$CPPFLAGS $X_CFLAGS"
+AC_CHECK_HEADER(X11/extensions/XShm.h, 
+		[AC_DEFINE(HAVE_XSHM, 1, [X11 supports MIT-XShm])],,
+		[#include <X11/Xlib.h>])
+CPPFLAGS=$saved_CPPFLAGS
+AC_CHECK_LIB(Xext, XShmQueryExtension, 
+	     [XEXT_LIB=-lXext], 
+	     [AC_MSG_ERROR(You need libXext)], 
+	     [$X_LIBS -lX11 $X_EXTRA_LIBS])
+
+AC_CHECK_LIB(Xmu, XSolarisGetVisualGamma, 
+	     [AC_DEFINE([USE_SOLARIS_XMU], 1, [SolarisXmu present])
+		XEXT_LIB="$XEXT_LIB -lXmu"
+	   	],, 
+	     [$X_LIBS -lX11 $X_EXTRA_LIBS])
+
+
+dnl ---------------------------------------------------------
+dnl Xvideo (Xv)
+dnl ---------------------------------------------------------
+
+use_xv=yes
+AC_ARG_ENABLE(xv, 
+  [  --disable-xv            disable the use of Xv ],
+  [if test "x$enableval" != xyes; then
+     use_xv=no
+   fi])
+if test "x$use_xv" = xyes; then
+  saved_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="$CPPFLAGS $X_CFLAGS"
+  AC_CHECK_HEADER(X11/extensions/Xv.h, xv_header=yes, xv_header=no)
+  CPPFLAGS=$saved_CPPFLAGS
+  AC_CHECK_LIB(Xv, XvQueryExtension, 
+	       [ AC_DEFINE([HAVE_XV], 1, [X11 supports Xv])
+		 XEXT_LIB="$XEXT_LIB -lXv"
+		 BUILD_XV=1
+	        ], 
+	       [AC_MSG_WARN([You won't be able to use Xv])], 
+	       [$X_LIBS -lX11 -lXext $X_EXTRA_LIBS])
+fi
+AC_SUBST(XEXT_LIB)
+
+dnl ---------------------------------------------------------
+dnl end Xvideo (Xv)
+dnl ---------------------------------------------------------
+
+
+dnl ---------------------------------------------------------
+dnl libjpeg
+dnl ---------------------------------------------------------
+
+jpeg_path=""
+AC_ARG_WITH(libjpeg, 
+  AC_HELP_STRING([--with-libjpeg=path],
+                 [specify the install prefix to libjpeg]), 
+  [if test "x$withval" = xno; then
+     AC_MSG_ERROR([You must have/use libjpeg])
+   fi
+   if test "x$withval" != xyes; then
+     jpeg_path=$withval
+   fi])
+if test -z "$jpeg_path"; then
+  dnl We have nothing better to go on, guess that it's installed in prefix
+  if test "x$prefix" != xNONE; then
+    jpeg_path=$prefix
+  else
+    jpeg_path=$ac_default_prefix
+  fi  
+fi
+dnl Both this and the libdvdread should first test and see if any flags
+dnl beside -lname are needed. Then they the suggested path (+ some standard?)
+TMPCFLAGS=$CFLAGS
+CFLAGS="-L$jpeg_path/lib"
+AC_CHECK_LIB(jpeg, main, 
+  [ JPEG_LIBS="-L$jpeg_path/lib -R$jpeg_path/lib -ljpeg"
+    JPEG_CPPFLAGS=-I$jpeg_path/include
+  ],
+  [AC_MSG_ERROR([Need libjpeg, install it and/or specify it's location])], 
+  -L$jpeg_path/lib)
+
+CFLAGS=$TMPCFLAGS
+
+AC_ARG_WITH(libjpeg-includes, 
+  AC_HELP_STRING([--with-libjpeg-includes=path],
+                 [specify location of libjpeg headers]), 
+  [JPEG_CPPFLAGS=-I$with_libjpeg_includes])
+
+dnl if test x"$JPEG_CPPFLAGS" = x"-I/usr/local/include"; then
+dnl  JPEG_CPPFLAGS=""
+dnl fi
+if test x"$JPEG_CPPFLAGS" = x"-I/usr/include"; then
+  JPEG_CPPFLAGS=""
+fi
+
+saved_CPPFLAGS=$CPPFLAGS
+dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
+CPPFLAGS="-w $CPPFLAGS $JPEG_CPPFLAGS"
+AC_CHECK_HEADER(jpeglib.h,, 
+  [ AC_MSG_WARN([Can not find jpeglib.h, need the libjpeg headers])
+    AC_MSG_ERROR([Install the headers and/or specify their location]) 
+  ])
+CPPFLAGS=$saved_CPPFLAGS
+
+AC_SUBST(JPEG_CPPFLAGS)
+AC_SUBST(JPEG_LIBS)
+
+dnl ---------------------------------------------------------
+dnl end libjpeg
+dnl ---------------------------------------------------------
+
+
+dnl clock_gettime is in librt on Solaris
+AC_CHECK_FUNC(clock_gettime, [ AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [ ]) ], 
+  AC_CHECK_LIB(rt, clock_gettime, 
+    [ AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [ ])
+      LIBS="$LIBS -lrt"
+    ]
+  )
+)
+
+dnl nanosleep is in librt on Solaris
+AC_CHECK_FUNC(nanosleep, , 
+  AC_CHECK_LIB(rt, nanosleep, [ LIBS="$LIBS -lrt" ],
+    AC_CHECK_LIB(posix4, nanosleep, [ LIBS="$LIBS -lposix4" ], 
+      AC_MSG_ERROR(You need nanosleep)
+    )
+  )
+)
+
+dnl Should this also have some fallback library?
+AC_CHECK_FUNCS(madvise)
+
+
+dnl ---------------------------------------------------------
+dnl dvdread
+dnl ---------------------------------------------------------
+
+dvd_path=""
+AC_ARG_WITH(dvdread, 
+  AC_HELP_STRING([--with-dvdread=path],
+                 [specify the install prefix to libdvdread]), 
+  [if test "x$with_dvdread" = xno; then
+     AC_MSG_ERROR([You must have/use libdvdread])
+   fi
+   if test "x$with_dvdread" != xyes; then
+     dvd_path=$with_dvdread
+   fi])
+if test -z "$dvd_path"; then
+  dnl We have nothing better to go on, guess that it's installed in prefix
+  if test "x$prefix" != xNONE; then
+    dvd_path=$prefix
+  else
+    dvd_path=$ac_default_prefix
+  fi
+fi
+
+TMPCFLAGS=$CFLAGS
+CFLAGS="-L$dvd_path/lib"
+
+AC_CHECK_LIB(dvdread, DVDDiscID, 
+  [ DVDREAD_LIBS="-L$dvd_path/lib -R$dvd_path/lib -ldvdread" 
+    DVDREAD_CPPFLAGS=-I$dvd_path/include
+  ],
+  [
+    AC_CHECK_LIB(dvdread, DVDOpen, 
+      [ AC_MSG_ERROR([Upgrade libdvdread to 0.9.4 or later]) ],
+      [ AC_MSG_ERROR([Need libdvdread, install it or specify it's location])],
+      -L$dvd_path/lib)
+  ], -L$dvd_path/lib)
+
+CFLAGS=$TMPCFLAGS
+
+AC_ARG_WITH(dvdread-includes, 
+  AC_HELP_STRING([--with-dvdread-includes=path],
+              [specify location of libdvdread headers]), 
+  [DVDREAD_CPPFLAGS=-I$with_dvdread_includes])
+
+dnl if test x"$DVDREAD_CPPFLAGS" = x"-I/usr/local/include"; then
+dnl  DVDREAD_CPPFLAGS=""
+dnl fi
+if test x"$DVDREAD_CPPFLAGS" = x"-I/usr/include"; then
+  DVDREAD_CPPFLAGS=""
+fi
+
+dnl Linux and Solaris needs this to prototype lseek64 and others
+dnl Should really be taken from getconf...
+DVDREAD_CPPFLAGS="-D_LARGEFILE64_SOURCE $DVDREAD_CPPFLAGS"
+
+saved_CPPFLAGS=$CPPFLAGS
+dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
+CPPFLAGS="-w $CPPFLAGS $DVDREAD_CPPFLAGS"
+AC_CHECK_HEADER(dvdread/dvd_reader.h,, 
+  [ AC_MSG_WARN([Can not find dvd_reader.h, need the libdvdread headers])
+    AC_MSG_ERROR([Install the headers and/or specify their location]) 
+  ])
+CPPFLAGS=$saved_CPPFLAGS
+
+AC_SUBST(DVDREAD_CPPFLAGS)
+AC_SUBST(DVDREAD_ALIGN_CFLAGS)
+AC_SUBST(DVDREAD_LIBS)
+
+dnl ---------------------------------------------------------
+dnl end dvdread
+dnl ---------------------------------------------------------
+
+
+dnl ---------------------------------------------------------
+dnl Sun MediaLib
+dnl ---------------------------------------------------------
+
+have_mlib=no
+mlib_path="/opt/SUNWmlib"
+AC_ARG_WITH(libmlib,
+  AC_HELP_STRING([--with-libmlib=path],
+                 [specify where mediaLib is installed]),
+  [if test "x$with_libmlib" != xyes; then
+     mlib_path=$with_libmlib
+   fi])
+if test "x$mlib_path" != xno; then
+  saved_CPPFLAGS=$CFLAGS
+  CFLAGS="$CFLAGS -L$mlib_path/lib"
+  AC_CHECK_LIB(mlib, mlib_VideoDCT8x8_S16_S16, 
+	       [ MLIB_LIBS="-L$mlib_path/lib -R$mlib_path/lib -lmlib"
+                 MLIB_CPPFLAGS=-I$mlib_path/include
+                 have_mlib=yes
+               ])
+  CFLAGS=$saved_CPPFLAGS
+fi
+if test "x$have_mlib" = xyes; then
+  dnl if test x"$MLIB_CPPFLAGS" = x"-I/usr/local/include"; then
+  dnl   MLIB_CPPFLAGS=""
+  dnl fi
+  if test x"$MLIB_CPPFLAGS" = x"-I/usr/include"; then
+    MLIB_CPPFLAGS=""
+  fi
+
+  saved_CPPFLAGS=$CPPFLAGS
+  dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
+  CPPFLAGS="-w $CPPFLAGS $MLIB_CPPFLAGS"
+  AC_CHECK_HEADER(mlib_types.h,, 
+    [ AC_MSG_WARN([Can not find mlib_types.h, need the mediaLib headers])
+      AC_MSG_ERROR([Install the headers and/or specify their location]) 
+    ])
+  CPPFLAGS=$saved_CPPFLAGS
+fi
+
+
+AC_SUBST(MLIB_CPPFLAGS)
+AC_SUBST(MLIB_LIBS)
+AM_CONDITIONAL(MLIB_LIBS, [test "x$have_mlib" = xyes])
+if test "x$have_mlib" = xyes; then
+  AC_DEFINE(HAVE_MLIB, 1, [Solaris MultiMedia Library installed])
+  BUILD_MLIB=1
+fi
+
+dnl ---------------------------------------------------------
+dnl end Sun MediaLib
+dnl ---------------------------------------------------------
+
+
+dnl ---------------------------------------------------------
+dnl liba52
+dnl ---------------------------------------------------------
+
+a52_path=""
+AC_ARG_WITH(liba52, 
+  AC_HELP_STRING([--with-liba52=path],
+                 [specify the install prefix to liba52 (a52dec)]), 
+  [if test "x$with_liba52" = xno; then
+     AC_MSG_ERROR([You must have/use a52dec])
+   fi
+   if test "x$with_liba52" != xyes; then
+     a52_path=$with_liba52
+   fi])
+if test -z "$a52_path"; then
+  dnl We have nothing better to go on, guess that it's installed in prefix
+  if test "x$prefix" != xNONE; then
+    a52_path=$prefix
+  else
+    a52_path=$ac_default_prefix
+  fi
+fi
+
+TMPCFLAGS=$CFLAGS
+CFLAGS="-L$a52_path/lib"
+
+dnl a52_free is a new function in 0.7.3
+AC_CHECK_LIB(a52, a52_free, 
+  [ 
+    A52_LIBS="-L$a52_path/lib -R$a52_path/lib -la52" 
+    A52_CPPFLAGS=-I$a52_path/include
+  ],
+  [
+    if test "x$have_mlib" = xyes; then
+      AC_CHECK_LIB(a52, a52_init, 
+        [ AC_MSG_ERROR([You have liba52 0.7.2 or earlier, need 0.7.3 or later])
+        ],
+        [ AC_MSG_ERROR([Need liba52, install a52dec or specify it's location])
+        ], -L$a52_path/lib -L$mlib_path/lib -lmlib -lm)
+    else
+      AC_CHECK_LIB(a52, a52_init, 
+        [ AC_MSG_ERROR([You have liba52 0.7.2 or earlier, need 0.7.3 or later])
+        ],
+        [ AC_MSG_ERROR([Need liba52, install a52dec or specify it's location])
+        ], -L$a52_path/lib -lm)
+    fi
+  ], [-L$a52_path/lib -lm])
+
+CFLAGS=$TMPCFLAGS
+
+AC_ARG_WITH(liba52-includes, 
+  AC_HELP_STRING([--with-liba52-includes=path],
+                 [specify location of liba52 headers]), 
+  [A52_CPPFLAGS=-I$with_liba52_includes])
+
+dnl update to test for 0.7.2 / 0.7.3 MM_ACCEL_DJBFFT ?
+
+dnl if test x"$A52_CPPFLAGS" = x"-I/usr/local/include"; then
+dnl  A52_CPPFLAGS=""
+dnl fi
+if test x"$A52_CPPFLAGS" = x"-I/usr/include"; then
+  A52_CPPFLAGS=""
+fi
+
+saved_CPPFLAGS=$CPPFLAGS
+dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
+CPPFLAGS="-w $CPPFLAGS $A52_CPPFLAGS"
+AC_CHECK_HEADER(a52dec/a52.h,, 
+    [ AC_MSG_WARN([Can not find a52dec/a52.h, need the liba52 headers])
+      AC_MSG_ERROR([Install a52dec(-dev) and/or specify it's location]) 
+    ])
+CPPFLAGS=$saved_CPPFLAGS
+
+AC_SUBST(A52_CPPFLAGS)
+AC_SUBST(A52_LIBS)
+
+dnl ---------------------------------------------------------
+dnl end liba52
+dnl ---------------------------------------------------------
+
+dnl ---------------------------------------------------------
+dnl libmad
+dnl ---------------------------------------------------------
+
+mad_path=""
+AC_ARG_WITH(libmad, 
+  AC_HELP_STRING([--with-libmad=path],
+                 [specify the install prefix to libmad]), 
+  [if test "x$with_libmad" = xno; then
+     AC_MSG_ERROR([You must have/use libmad])
+   fi
+   if test "x$with_libmad" != xyes; then
+     mad_path=$with_libmad
+   fi])
+if test -z "$mad_path"; then
+  dnl We have nothing better to go on, guess that it's installed in prefix
+  if test "x$prefix" != xNONE; then
+    mad_path=$prefix
+  else
+    mad_path=$ac_default_prefix
+  fi
+fi
+
+TMPCFLAGS=$CFLAGS
+CFLAGS="-L$mad_path/lib"
+
+AC_CHECK_LIB(mad, mad_frame_decode, 
+  [ 
+    MAD_LIBS="-L$mad_path/lib -R$mad_path/lib -lmad" 
+    MAD_CPPFLAGS=-I$mad_path/include
+  ],[AC_MSG_ERROR([Need libmad, install it or specify it's location])],
+    [-L$mad_path/lib])
+
+CFLAGS=$TMPCFLAGS
+
+AC_ARG_WITH(libmad-includes, 
+  AC_HELP_STRING([--with-libmad-includes=path],
+                 [specify location of libmad headers]), 
+  [MAD_CPPFLAGS=-I$with_libmad_includes])
+
+saved_CPPFLAGS=$CPPFLAGS
+dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
+CPPFLAGS="-w $CPPFLAGS $MAD_CPPFLAGS"
+AC_CHECK_HEADER(mad.h,, 
+    [ AC_MSG_WARN([Can not find mad.h, need the libmad headers])
+      AC_MSG_ERROR([Install libmad and/or specify it's location]) 
+    ])
+CPPFLAGS=$saved_CPPFLAGS
+
+AC_SUBST(MAD_CPPFLAGS)
+AC_SUBST(MAD_LIBS)
+
+dnl ---------------------------------------------------------
+dnl end libmad
+dnl ---------------------------------------------------------
+
+dnl ---------------------------------------------------------
+dnl our integrated audio library
+dnl ---------------------------------------------------------
+
+AC_DEFINE([LIBOGLEAO_NULL],,[libogleao null audio support])
+
+dnl check for oss
+AC_ARG_ENABLE([oss],
+    [  --disable-oss           make a version not using oss])
+if test "x$enable_oss" != xno; then
+    case "$host" in
+    *-linux*|*-openbsd*|*-freebsd*|*-bsdi*)
+
+dnl check for headers.. only define LIBOGLEAO_OSS if library and headers found.
+        AC_DEFINE([LIBOGLEAO_OSS],,[libogleao OSS audio support])
+	BUILD_AUDIO_OSS=1
+        AC_CHECK_LIB([ossaudio],[_oss_ioctl],
+            [LIBOGLEAO_LIBS="$LIBOGLEAO_LIBS -lossaudio"])
+	DEFAULT_AUDIO_DRIVER="oss"
+	DEFAULT_AUDIO_DEVICE="/dev/dsp"
+    ;;
+    *-sun-solaris*|*-hpux*)
+        AC_CHECK_LIB([OSSlib],[OSS_init],
+            [LIBOGLEAO_LIBS="$LIBOGLEAO_LIBS -lOSSlib"
+             AC_DEFINE([LIBOGLEAO_OSS],,[libogleao OSS audio support])
+             BUILD_AUDIO_OSS=1
+             DEFAULT_AUDIO_DRIVER="oss"
+             DEFAULT_AUDIO_DEVICE="/dev/dsp"])
+    ;;
+    esac
+fi
+
+dnl check for openbsd audio 
+AC_ARG_ENABLE([obsdaudio],
+    [  --disable-obsdaudio     make a version not using OpenBSD audio])
+if test "x$enable_obsdaudio" != xno; then
+    case "$host" in
+    *-openbsd* | *-netbsd* )
+
+dnl only define LIBOGLEAO_OBSD headers found
+dnl sys/audioio.h
+        AC_DEFINE([LIBOGLEAO_OBSD],,[libogleao OpenBSD audio support])
+	BUILD_AUDIO_OBSD=1
+	DEFAULT_AUDIO_DRIVER="obsd"
+	DEFAULT_AUDIO_DEVICE="/dev/audio"
+    ;;
+    esac
+fi
+
+dnl check for sunaudio
+AC_ARG_ENABLE([sunaudio],
+    [  --disable-sunaudio      make a version not using Sun audio])
+if test "x$enable_sunaudio" != xno; then
+    case "$host" in
+    *-sun-solaris*)
+
+dnl check for headers.. only define LIBOGLEAO_SOLARIS if headers are found.
+        AC_DEFINE([LIBOGLEAO_SOLARIS],,[libogleao solaris audio support])
+	BUILD_AUDIO_SOLARIS=1
+	DEFAULT_AUDIO_DRIVER="solaris"
+	DEFAULT_AUDIO_DEVICE="/dev/audio"
+    esac
+fi
+
+dnl check for ALSA
+AC_ARG_ENABLE([alsa],
+    [  --disable-alsa          make a version not using alsa])
+if test "x$enable_alsa" != xno; then
+    case "$host" in
+    *-linux*)
+        AC_MSG_CHECKING([for alsa version])
+        AC_EGREP_CPP([AP_maGiC_VALUE],
+          [ 
+#include <sys/asoundlib.h>
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
+#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR==5)
+AP_maGiC_VALUE
+#endif
+#endif
+          ],
+          [
+            have_alsa_05x=yes
+            AC_MSG_RESULT([found 0.5.x])
+	    AC_MSG_WARN([Disabling ALSA support, install a 0.9.x version])
+          ],
+          [
+            AC_EGREP_CPP([AP_maGiC_VALUE],
+              [
+#include <sys/asoundlib.h>
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
+#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR>=6)
+AP_maGiC_VALUE
+#endif
+#endif
+              ],
+              [
+                have_alsa_final=yes
+                AC_MSG_RESULT([found latest])
+              ],
+	      [
+		AC_MSG_RESULT([no])	
+	      ])
+          ])
+        if test "x$have_alsa_final" = x"yes"; then
+                    dnl which symbol should we check for? 
+          AC_CHECK_LIB([asound],[main],
+                       [ AC_DEFINE([LIBOGLEAO_ALSA],,
+                                   [libogleao ALSA audio support])
+			 LIBOGLEAO_LIBS="$LIBGLEAO_LIBS -lasound"
+			 BUILD_AUDIO_ALSA=1
+			 DEFAULT_AUDIO_DRIVER="alsa"
+			 DEFAULT_AUDIO_DEVICE="/dev/dsp"
+                       ])
+        fi;;
+    esac
+fi
+
+AC_SUBST([LIBOGLEAO_LIBS])
+
+dnl ---------------------------------------------------------
+dnl end included audio out
+dnl ---------------------------------------------------------
+
+
+dnl ---------------------------------------------------------
+dnl libxml
+dnl ---------------------------------------------------------
+
+AM_PATH_XML2(2.4.19, AC_DEFINE(HAVE_XML, 1, [libxml found]),
+  [ AC_MSG_ERROR([Install libxml2(-dev) and/or specify it's location]) ])
+
+dnl ---------------------------------------------------------
+dnl end libxml
+dnl ---------------------------------------------------------
+
+
+dnl ---------------------------------------------------------
+dnl XF86VidMode
+dnl ---------------------------------------------------------
+
+use_xf86vidmode=yes
+AC_ARG_ENABLE(xf86vidmode, 
+  [  --disable-xf86vidmode	  disable the use of XF86VidMode ],
+  [if test "x$enableval" != xyes; then
+     use_xf86vidmode=no
+   fi])
+if test "x$use_xf86vidmode" = xyes; then
+  saved_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="$CPPFLAGS $X_CFLAGS"
+  AC_CHECK_HEADER([X11/extensions/xf86vmode.h], 
+                  [xf86vidmode_header=yes], 
+                  [xf86vidmode_header=no],
+                  [#include <X11/Xlib.h>])
+  CPPFLAGS=$saved_CPPFLAGS
+  AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryExtension, 
+	       [ AC_DEFINE([HAVE_XF86VIDMODE], 1, [X11 supports XF86VidMode])
+		 XF86VIDMODE_LIBS="-lXxf86vm"
+	        ], 
+	       [AC_MSG_WARN([You won't be able to use XF86VidMode])], 
+	       [$X_LIBS -lX11 -lXext $X_EXTRA_LIBS])
+fi
+AC_SUBST(XF86VIDMODE_LIBS)
+
+dnl ---------------------------------------------------------
+dnl end XF86VidMode
+dnl ---------------------------------------------------------
+
+
+dnl ---------------------------------------------------------
+dnl Xinerama
+dnl ---------------------------------------------------------
+
+use_xinerama=yes
+AC_ARG_ENABLE(xinerama, 
+  [  --disable-xinerama	  disable the use of Xinerama ],
+  [if test "x$enableval" != xyes; then
+     use_xinerama=no
+   fi])
+if test "x$use_xinerama" = xyes; then
+  saved_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="$CPPFLAGS $X_CFLAGS"
+  AC_CHECK_HEADER([X11/extensions/Xinerama.h], 
+                  [xinerama_header=yes], 
+                  [xinerama_header=no],
+                  [#include <X11/Xlib.h>])
+  CPPFLAGS=$saved_CPPFLAGS
+  AC_CHECK_LIB(Xinerama, XineramaQueryExtension, 
+	       [ AC_DEFINE([HAVE_XINERAMA], 1, [X11 supports Xinerama])
+		 XINERAMA_LIBS="-lXinerama"
+	        ], 
+	       [AC_MSG_WARN([You won't be able to use Xinerama])], 
+	       [$X_LIBS -lX11 -lXext $X_EXTRA_LIBS])
+fi
+AC_SUBST(XINERAMA_LIBS)
+
+dnl ---------------------------------------------------------
+dnl end Xinerama
+dnl ---------------------------------------------------------
+
+
+dnl ---------------------------------------------------------
+dnl config file
+dnl ---------------------------------------------------------
+
+if test "x${prefix}" = "xNONE"; then
+  AC_DEFINE_UNQUOTED(CONFIG_FILE, "${ac_default_prefix}/share/ogle/oglerc")
+  CONFIG_FILE="${ac_default_prefix}/share/ogle/oglerc"
+  CONFIG_FILE_DTD="${ac_default_prefix}/share/ogle/ogle_conf.dtd"
+else
+  AC_DEFINE_UNQUOTED(CONFIG_FILE, "${prefix}/share/ogle/oglerc")
+  CONFIG_FILE="${prefix}/share/ogle/oglerc"
+  CONFIG_FILE_DTD="${prefix}/share/ogle/ogle_conf.dtd"
+fi
+
+AC_SUBST(CONFIG_FILE)
+AC_SUBST(CONFIG_FILE_DTD)
+
+case $host_os in
+solaris*)
+	DEFAULT_DVD_DEVICE="/cdrom/cdrom0"
+	;;
+linux*)
+	DEFAULT_DVD_DEVICE="/dev/dvd"
+	;;
+freebsd*)
+	DEFAULT_DVD_DEVICE="/dev/acd0c"
+	;;
+netbsd*)
+  	case "$host_cpu" in
+   	i?86)
+		DEFAULT_DVD_DEVICE="/dev/rcd0d"
+		;;
+   	*)
+		DEFAULT_DVD_DEVICE="/dev/rcd0c"
+		;;
+  	esac
+  	;;
+openbsd*)
+	DEFAULT_DVD_DEVICE="/dev/rcd0c"
+	;;
+bsdi*)
+	DEFAULT_DVD_DEVICE="/dev/sr0c"
+	;;
+hpux*)
+	DEFAULT_DVD_DEVICE="/dev/dvd"
+	;;
+*)
+	DEFAULT_DVD_DEVICE=""
+	;;
+esac
+
+
+AC_SUBST(DEFAULT_DVD_DEVICE)
+AC_SUBST(DEFAULT_AUDIO_DEVICE)
+AC_SUBST(DEFAULT_AUDIO_DRIVER)
+
+dnl ---------------------------------------------------------
+dnl end config file
+dnl ---------------------------------------------------------
+
+
+
+
+dnl ---------------------------------------------------------
+dnl Compiler specific stuff
+dnl ---------------------------------------------------------
+
+if test "x$GCC" = xyes; then
+  CFLAGS="$CFLAGS -Wall"
+else
+    dnl non-GCC flags - we probably need exact configuration triplets here.
+    case "$host" in
+    sparc-sun-solaris*)
+	O_CFLAGS="-xCC -fast"
+	dnl The pragma pack(0) parts are not sticky, so we need to give this
+	dnl 'noalign' flag to cc for parts that access the ifo and nav structs.
+	DVDREAD_ALIGN_CFLAGS="-xmemalign"
+    ;;
+    alpha*)
+        dnl Compaq cc
+        O_CFLAGS="-fast"
+    esac
+fi
+
+dnl ---------------------------------------------------------
+dnl end Compiler specific stuff
+dnl ---------------------------------------------------------
+
+
+dnl ---------------------------------------------------------
+dnl Architecture specific stuff
+dnl ---------------------------------------------------------
+
+USE_MMX=
+USE_ALTIVEC=
+USE_SPARCASM=
+case "$host_cpu" in
+i?86)
+	if test "x$GCC" = xyes; then
+	  O_CFLAGS="$O_CFLAGS -fomit-frame-pointer -funroll-loops"
+dnl Do we need this ? should we hard code it to pentium/pentiumpro?
+dnl what about k6 / athlon
+dnl will it still assemble the mmx instructions when -march=i386
+dnl	  CFLAGS="$CFLAGS -march=$host_cpu"
+	  XCFLAGS="$CFLAGS -march=i586 -mcpu=pentiumpro"
+	fi
+	USE_MMX=yes
+	;;
+sparc)
+	if test "x$GCC" = xyes; then
+	  O_CFLAGS="$O_CFLAGS -mcpu=ultrasparc -mvis"
+	  AC_DEFINE([USE_SPARCASM],1,[use assembler routines])
+	  USE_SPARCASM=yes
+	fi
+	;;
+powerpc|ppc)
+	if test "x$GCC" = xyes; then
+	  O_CFLAGS="$O_CFLAGS -fomit-frame-pointer -funroll-loops"
+dnl is the right? needed? use just -m7400 ? need new gcc for that..
+dnl is there a -mcpu -march flag that we should use?
+dnl should be a try compile on this line.. 
+	  XCFLAGS="-Wa,-m7400"
+dnl that sets USE_ALTIVEC depending on the success
+	  USE_ALTIVEC=yes
+	fi
+        ;;
+alphaev6|alphaev67|alphaev68|alphaev7)
+	if test "x$GCC" = xyes; then
+	  O_CFLAGS="$O_CFLAGS -mcpu=ev6"
+        else  dnl Probably compaq cc
+          O_CFLAGS="$O_CFLAGS -mcpu=ev6"
+	fi
+esac
+
+AC_ARG_ENABLE(altivec, 
+  [  --disable-altivec       disable the use of Altivec (G4+)],
+  [if test "x$enableval" != xyes; then
+    USE_ALTIVEC=
+   fi])
+if test "x$USE_ALTIVEC" = xyes; then
+  AC_DEFINE([HAVE_ALTIVEC],1,[Processor support ALTIVEC])
+  BUILD_ALTIVEC=1
+  CFLAGS="$XCFLAGS $CFLAGS"
+fi
+
+AC_ARG_ENABLE(mmx, 
+  [  --disable-mmx           disable the use of MMX (x86)],
+  [if test "x$enableval" != xyes; then
+     USE_MMX=
+   fi])
+if test "x$USE_MMX" = xyes; then
+  AC_DEFINE([HAVE_MMX],1,[Processor support MMX])
+  BUILD_MMX=1
+  CFLAGS="$CFLAGS $XCFLAGS"
+fi
+BUILDINFO="`uname -m -r -s -v`"
+BUILDINFO="${BUILDINFO} `uname -p` `date`"
+BUILDINFO="${BUILDINFO}${BUILD_MMX:+ mmx}${BUILD_ALTIVEC:+ Altivec}"
+BUILDINFO="${BUILDINFO}${BUILD_MLIB:+ mlib}${BUILD_XV:+ Xv}"
+BUILDINFO="${BUILDINFO}${BUILD_AUDIO_OSS:+ oss}${BUILD_AUDIO_ALSA:+ alsa}"
+BUILDINFO="${BUILDINFO}${BUILD_AUDIO_SOLARIS:+ solaris}${BUILD_AUDIO_OBSD:+ obsd}"
+
+CCASFLAGS="$O_CFLAGS $CFLAGS"
+ifdef([AM_PROG_AS],[AM_PROG_AS],[])
+
+AC_SUBST(O_CFLAGS)
+AC_SUBST(BUILDINFO)
+AC_SUBST(USE_MMX)
+AM_CONDITIONAL(USE_MMX, [test "x$USE_MMX" = xyes])
+AC_SUBST(USE_ALTIVEC)
+AM_CONDITIONAL(USE_ALTIVEC, [test "x$USE_ALTIVEC" = xyes])
+AC_SUBST(USE_SPARCASM)
+AM_CONDITIONAL(USE_SPARCASM, [test "x$USE_SPARCASM" = xyes])
+
+dnl ---------------------------------------------------------
+dnl end Architecture specific stuff
+dnl ---------------------------------------------------------
+
+TOP_INCLUDES='-I$(top_srcdir) -I$(top_srcdir)/include'
+AC_SUBST(TOP_INCLUDES)
+
+
+AC_OUTPUT(Makefile 
+ogle/Makefile 
+include/Makefile 
+common/Makefile 
+ctrl/Makefile 
+ac3/Makefile 
+libogleao/Makefile 
+mpeg2_video/Makefile 
+vmg/Makefile 
+mpeg2_program/Makefile 
+scripts/Makefile
+scripts/ogle
+doc/Makefile
+doc/man/Makefile
+doc/man/oglerc.5
+doc/man/ogle.1
+dvd_cli/Makefile
+oglerc)
+
+echo "------------------------------------------------------"
+echo "Going to build with the following configuration:"
+
+if test "x$prefix" != xNONE; then
+  echo "  prefix: $prefix"
+else
+  echo "  prefix: $ac_default_prefix"
+fi  
+
+echo ""
+
+if test "x$BUILD_MMX" = x1; then
+   echo "  mmx:           Yes"
+else
+   echo "  mmx:           No"
+fi
+
+if test "x$BUILD_ALTIVEC" = x1; then
+   echo "  altivec:       Yes"
+else
+   echo "  altivec:       No"
+fi
+
+if test "x$BUILD_MLIB" = x1; then
+   echo "  mlib:          Yes"
+else
+   echo "  mlib:          No"
+fi
+
+if test "x$BUILD_XV" = x1; then
+   echo "  Xv:            Yes"
+else
+   echo "  Xv:            No"
+fi
+
+if test "x$BUILD_AUDIO_OSS" = x1; then
+   echo "  oss audio:     Yes"
+else
+   echo "  oss audio:     No"
+fi
+
+if test "x$BUILD_AUDIO_ALSA" = x1; then
+   echo "  alsa audio:    Yes"
+else
+   echo "  alsa audio:    No"
+fi
+
+if test "x$BUILD_AUDIO_SOLARIS" = x1; then
+   echo "  solaris audio: Yes"
+else
+   echo "  solaris audio: No"
+fi
+
+if test "x$BUILD_AUDIO_OBSD" = x1; then
+   echo "  obsd audio:    Yes"
+else
+   echo "  obsd audio:    No"
+fi
+

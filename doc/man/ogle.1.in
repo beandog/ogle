@@ -1,0 +1,98 @@
+.TH OGLE 1
+.SH NAME
+ogle \- DVD player with support for DVD menus
+.SH SYNOPSIS
+.B ogle 
+[\fB--check\fR] [\fB--debug\fR] [\fB-u <cli|gui>\fR [\fIpath\fR]]
+.SH DESCRIPTION
+Ogle is an open source DVD player that supports DVD menus and navigation.
+You should be able to play DVDs directly from the DVD drive, a mounted fs,
+an image file or a copy on your harddrive.
+.br
+Keyboard commands are available for navigation if you have 
+input foucus in the video window.
+
+See the oglerc man page or @CONFIG_FILE@ file for keybindings.
+
+.br
+Screen shots can be saved in Ogle's current working directory as 
+screenshoot.jpg.
+.br
+If you run xscreensaver it will be deactivated every 50 seconds 
+(don't use a timeout less than this ;)
+.SH OPTIONS
+.TP
+\fB\--check\fR
+Runs a few checks on the dvd setup and exits
+.TP
+\fB\--debug\fR
+This enables output of extensive debug information.
+Use this when sending bug reports.
+.TP
+\fB\--debug-<all|audio|cli|ctrl|gui|mpeg_ps|mpeg_vs|nav|vout>\fR
+These make the specified part(s) of Ogle run inside a GDB (The GNU Debugger)
+session. This can be usefull for tracing and crash examination.
+.TP
+\fB\-u cli\fR [\fIpath\fR]
+Start Ogle without the graphical user interface.  This is the default if 
+the graphical user interface has not been installed. If \fIpath\fR is given
+it attempts to use that as the root of the DVD to play.  If it's left out
+then it defaults to /dev/dvd.
+.TP
+\fB\-u gui\fR [\fIpath\fR]
+Start Ogle with a graphical user interface.  This is the default if 
+the graphical user interface has been installed. If \fIpath\fR is given
+it attempts to use that as the root of the DVD to play and begins playback
+immediately.
+.TP
+The -u options are (of course) mutually exclusive.
+.SH "ENVIRONMENT VARIABLES"
+.TP
+USE_FFB2_YUV2RGB
+If you run Ogle on Solaris and have a FFB2 frame buffer (a Creator 3D) 
+then you can use its hardware yuv2rgb to gain faster playback speed.  This 
+is still experimental code, so be warned.  It is enabled by setting the 
+environment variable USE_FFB2_YUV2RGB.
+.TP
+OGLE_MLIB_SCALEMODE
+If mlib is used for scaling of video, OGLE_MLIB_SCALEMODE will decide which type will be used. The available options are:
+.br
+NEAREST, BILINEAR, BICUBIC and BICUBIC2.
+.TP
+OGLE_USE_XV
+If set to 0, it disables the use of the XVideo extension.
+.TP
+OGLE_USE_XSHM
+If set to 0, it disables the use of the XShm extension.
+.TP
+OGLE_OSS_RESET_BUG
+If set, enables a workaround for buggy OSS audio drivers.
+It closes/reopens the audio device instead of resetting it when changing
+audio parameters.
+.TP
+OGLE_OSS_TEST
+When set, a few tones will be output in each audio channel everytime the audio parameters change and the OSS audio output driver is used.
+.SH FILES
+@CONFIG_FILE@
+.br
+$HOME/.oglerc
+.SH "SEE ALSO"
+oglerc(5)
+.SH NOTE
+For more information please visit http://www.dtek.chalmers.se/~dvd/
+.SH AUTHORS
+Björn Englund <d4bjorn@dtek.chalmers.se>
+.br
+Håkan Hjort <d95hjort@dtek.chalmers.se>
+.br
+Vilhelm Bergman <d96v@dtek.chalmers.se>
+.br
+Martin Norbäck <d95mback@dtek.chalmers.se>
+.br
+with contibutions from many others on the net.
+.SH BUGS
+Please report bugs to <dvd@dtek.chalmers.se>.
+.SH COPYRIGHT
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+

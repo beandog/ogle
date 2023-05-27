@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo run $* > /tmp/ogle_ctrl.$$
+
+xterm -e gdb -x /tmp/ogle_ctrl.$$ $DVDP_ROOT/ogle_ctrl
+rm /tmp/ogle_ctrl.$$
