@@ -13762,7 +13762,7 @@ solaris*)
 	DEFAULT_DVD_DEVICE="/cdrom/cdrom0"
 	;;
 linux*)
-	DEFAULT_DVD_DEVICE="/dev/dvd"
+	DEFAULT_DVD_DEVICE="/dev/sr0"
 	;;
 freebsd*)
 	DEFAULT_DVD_DEVICE="/dev/acd0c"
@@ -13784,7 +13784,7 @@ bsdi*)
 	DEFAULT_DVD_DEVICE="/dev/sr0c"
 	;;
 hpux*)
-	DEFAULT_DVD_DEVICE="/dev/dvd"
+	DEFAULT_DVD_DEVICE="/dev/sr0"
 	;;
 *)
 	DEFAULT_DVD_DEVICE=""

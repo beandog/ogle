@@ -1,7 +1,7 @@
 #!/bin/sh
 # @configure_input@
 
-create_pipe() { 
+create_pipe() {
     if [ ! -p $1 ]; then
 	rm -f $1;
         # So any other user can start the program / rm the pipes
@@ -80,7 +80,7 @@ export OGLE_DLEVEL
 
 
 if [ "$debug" = "1" ]; then
- # information on the build 
+ # information on the build
  echo "Build: @BUILDINFO@"
  # and the os version we are running on
  runtime="Runtime: `uname -m -r -s -v`"
@@ -95,7 +95,7 @@ if [ "$debug" = "1" ]; then
 	 echo "cpuinfo:"
 	 echo $cpuinfo
 	 echo ""
-	 
+
          #check for bad kernels
 	 linux_version="`uname -r`"
 	 if [ "$linux_version" = "2.4.10" ]; then
@@ -109,7 +109,7 @@ if [ "$debug" = "1" ]; then
 	     echo "WARNING: There has been some DVD-troubles with modified 2.4.9-kernels."
 	     echo ""
 	 fi
-	 
+
          #check for dvd drives
 	 PROCFILE="/proc/sys/dev/cdrom/info"
 	 if [ ! -r "$PROCFILE" ]; then
@@ -117,11 +117,11 @@ if [ "$debug" = "1" ]; then
 	     echo "No CD or DVD devices on this system or cdrom module not loaded?"
 	 else
 	     DEVLIST=`cat $PROCFILE | grep 'drive name:' | cut -d':' -f 2-`
-	     
+
 	     ISDVDLIST=`cat $PROCFILE \
                         | grep 'Can read DVD:' \
                         | cut -d':' -f 2-`
-	     
+
 	     dvd_dev_f() {
 	         for dev in $DEVLIST; do
                      if [ "$1" = "1" ]; then
@@ -130,11 +130,11 @@ if [ "$debug" = "1" ]; then
 		     shift
                  done
              }
-	     
+
              dvd_dev_f $ISDVDLIST
 
-             #is /dev/dvd set?
-	     dev="/dev/dvd"
+             #is /dev/sr0 set?
+	     dev="/dev/sr0"
 	     while [ -h $dev ]; do
 		 nextdev=`ls -l $dev | cut -d'>' -f 2`
 		 nextdev="`echo $nextdev`"
@@ -151,7 +151,7 @@ if [ "$debug" = "1" ]; then
 		 echo "WARNING: $dev is not readable"
 		 echo ""
 	     fi
-	     
+
              #ide devices
 	     ide_devices="`ls /proc/ide | grep hd`"
              #ide cd/dvd devices
@@ -198,7 +198,7 @@ if [ "$debug" = "1" ]; then
 			     dev="`dirname $dev`/$nextdev"
 			 fi
 		     done
-		     
+
 		 fi
 	     done
 	     echo ""
@@ -215,7 +215,7 @@ if [ "$debug" = "1" ]; then
 		     echo " hdc: /dev/ide/host0/bus1/target0/..."
 		     echo " hdd: /dev/ide/host0/bus1/target1/..."
 		 fi
-		 
+
 		 if ! [ -a /proc/ide/$dev/settings ]; then
 		     echo "/proc/ide/$dev/settings does not exist"
 		 elif [ -r /proc/ide/$dev/settings ]; then
@@ -235,7 +235,7 @@ if [ "$debug" = "1" ]; then
 		     echo "WARNING: Cannot read /proc/ide/$dev/settings, need to be root to do that?"
 		 fi
 	     done
-	     
+
              #ide device information
 	     hdparm_path="/sbin /usr/sbin"
 	     hdparm_found=0
@@ -291,7 +291,7 @@ if [ "$debug" = "1" ]; then
 			 echo "WARNING: Could not get DMA state for /dev/$dev"
 		     elif [ "$dmainfo" = "1" ]; then
 			 echo "DMA is on for /dev/$dev"
-		     else	       
+		     else
 			 echo ""
 			 echo "WARNING: DMA is OFF for /dev/$dev"
 			 echo ""
@@ -300,9 +300,9 @@ if [ "$debug" = "1" ]; then
 		 done
 	     else
 		 echo "WARNING: hdparm not found"
-	     fi  
+	     fi
 	 fi
-	 
+
 	 ;;
      "SunOS")
 	 sysinfo -class device

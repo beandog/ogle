@@ -2,8 +2,8 @@ Playing a DVD
 
   To play a dvd you start ogle.
   A simple player is included in the Ogle main package to start this do.
-  'ogle -u cli /dev/dvd' just 'ogle' will do to.
-  where you can change /dev/dvd to point to your dvd reader or a directory
+  'ogle -u cli /dev/sr0' just 'ogle' will do to.
+  where you can change /dev/sr0 to point to your dvd reader or a directory
   containing the files of a dvd. (see ogle_gui examples below)
 
 Ogle GUI
@@ -21,7 +21,7 @@ Ogle GUI
   /mnt/dvd or /mnt/dvd/VIDEO_TS
 
   or choose open disc in the menu
-  which will open /dev/dvd which should point to your dvd device.
+  which will open /dev/sr0 which should point to your dvd device.
 
   At the moment you have to exit ogle and restart to play another dvd.
 

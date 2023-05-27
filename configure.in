@@ -25,19 +25,19 @@ dnl Find X Window System
 AC_PATH_XTRA
 saved_CPPFLAGS=$CPPFLAGS
 CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-AC_CHECK_HEADER(X11/extensions/XShm.h, 
+AC_CHECK_HEADER(X11/extensions/XShm.h,
 		[AC_DEFINE(HAVE_XSHM, 1, [X11 supports MIT-XShm])],,
 		[#include <X11/Xlib.h>])
 CPPFLAGS=$saved_CPPFLAGS
-AC_CHECK_LIB(Xext, XShmQueryExtension, 
-	     [XEXT_LIB=-lXext], 
-	     [AC_MSG_ERROR(You need libXext)], 
+AC_CHECK_LIB(Xext, XShmQueryExtension,
+	     [XEXT_LIB=-lXext],
+	     [AC_MSG_ERROR(You need libXext)],
 	     [$X_LIBS -lX11 $X_EXTRA_LIBS])
 
-AC_CHECK_LIB(Xmu, XSolarisGetVisualGamma, 
+AC_CHECK_LIB(Xmu, XSolarisGetVisualGamma,
 	     [AC_DEFINE([USE_SOLARIS_XMU], 1, [SolarisXmu present])
 		XEXT_LIB="$XEXT_LIB -lXmu"
-	   	],, 
+	   	],,
 	     [$X_LIBS -lX11 $X_EXTRA_LIBS])
 
 
@@ -46,7 +46,7 @@ dnl Xvideo (Xv)
 dnl ---------------------------------------------------------
 
 use_xv=yes
-AC_ARG_ENABLE(xv, 
+AC_ARG_ENABLE(xv,
   [  --disable-xv            disable the use of Xv ],
   [if test "x$enableval" != xyes; then
      use_xv=no
@@ -56,12 +56,12 @@ if test "x$use_xv" = xyes; then
   CPPFLAGS="$CPPFLAGS $X_CFLAGS"
   AC_CHECK_HEADER(X11/extensions/Xv.h, xv_header=yes, xv_header=no)
   CPPFLAGS=$saved_CPPFLAGS
-  AC_CHECK_LIB(Xv, XvQueryExtension, 
+  AC_CHECK_LIB(Xv, XvQueryExtension,
 	       [ AC_DEFINE([HAVE_XV], 1, [X11 supports Xv])
 		 XEXT_LIB="$XEXT_LIB -lXv"
 		 BUILD_XV=1
-	        ], 
-	       [AC_MSG_WARN([You won't be able to use Xv])], 
+	        ],
+	       [AC_MSG_WARN([You won't be able to use Xv])],
 	       [$X_LIBS -lX11 -lXext $X_EXTRA_LIBS])
 fi
 AC_SUBST(XEXT_LIB)
@@ -76,9 +76,9 @@ dnl libjpeg
 dnl ---------------------------------------------------------
 
 jpeg_path=""
-AC_ARG_WITH(libjpeg, 
+AC_ARG_WITH(libjpeg,
   AC_HELP_STRING([--with-libjpeg=path],
-                 [specify the install prefix to libjpeg]), 
+                 [specify the install prefix to libjpeg]),
   [if test "x$withval" = xno; then
      AC_MSG_ERROR([You must have/use libjpeg])
    fi
@@ -91,24 +91,24 @@ if test -z "$jpeg_path"; then
     jpeg_path=$prefix
   else
     jpeg_path=$ac_default_prefix
-  fi  
+  fi
 fi
 dnl Both this and the libdvdread should first test and see if any flags
 dnl beside -lname are needed. Then they the suggested path (+ some standard?)
 TMPCFLAGS=$CFLAGS
 CFLAGS="-L$jpeg_path/lib"
-AC_CHECK_LIB(jpeg, main, 
+AC_CHECK_LIB(jpeg, main,
   [ JPEG_LIBS="-L$jpeg_path/lib -R$jpeg_path/lib -ljpeg"
     JPEG_CPPFLAGS=-I$jpeg_path/include
   ],
-  [AC_MSG_ERROR([Need libjpeg, install it and/or specify it's location])], 
+  [AC_MSG_ERROR([Need libjpeg, install it and/or specify it's location])],
   -L$jpeg_path/lib)
 
 CFLAGS=$TMPCFLAGS
 
-AC_ARG_WITH(libjpeg-includes, 
+AC_ARG_WITH(libjpeg-includes,
   AC_HELP_STRING([--with-libjpeg-includes=path],
-                 [specify location of libjpeg headers]), 
+                 [specify location of libjpeg headers]),
   [JPEG_CPPFLAGS=-I$with_libjpeg_includes])
 
 dnl if test x"$JPEG_CPPFLAGS" = x"-I/usr/local/include"; then
@@ -121,9 +121,9 @@ fi
 saved_CPPFLAGS=$CPPFLAGS
 dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
 CPPFLAGS="-w $CPPFLAGS $JPEG_CPPFLAGS"
-AC_CHECK_HEADER(jpeglib.h,, 
+AC_CHECK_HEADER(jpeglib.h,,
   [ AC_MSG_WARN([Can not find jpeglib.h, need the libjpeg headers])
-    AC_MSG_ERROR([Install the headers and/or specify their location]) 
+    AC_MSG_ERROR([Install the headers and/or specify their location])
   ])
 CPPFLAGS=$saved_CPPFLAGS
 
@@ -136,8 +136,8 @@ dnl ---------------------------------------------------------
 
 
 dnl clock_gettime is in librt on Solaris
-AC_CHECK_FUNC(clock_gettime, [ AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [ ]) ], 
-  AC_CHECK_LIB(rt, clock_gettime, 
+AC_CHECK_FUNC(clock_gettime, [ AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [ ]) ],
+  AC_CHECK_LIB(rt, clock_gettime,
     [ AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [ ])
       LIBS="$LIBS -lrt"
     ]
@@ -145,9 +145,9 @@ AC_CHECK_FUNC(clock_gettime, [ AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [ ]) ],
 )
 
 dnl nanosleep is in librt on Solaris
-AC_CHECK_FUNC(nanosleep, , 
+AC_CHECK_FUNC(nanosleep, ,
   AC_CHECK_LIB(rt, nanosleep, [ LIBS="$LIBS -lrt" ],
-    AC_CHECK_LIB(posix4, nanosleep, [ LIBS="$LIBS -lposix4" ], 
+    AC_CHECK_LIB(posix4, nanosleep, [ LIBS="$LIBS -lposix4" ],
       AC_MSG_ERROR(You need nanosleep)
     )
   )
@@ -162,9 +162,9 @@ dnl dvdread
 dnl ---------------------------------------------------------
 
 dvd_path=""
-AC_ARG_WITH(dvdread, 
+AC_ARG_WITH(dvdread,
   AC_HELP_STRING([--with-dvdread=path],
-                 [specify the install prefix to libdvdread]), 
+                 [specify the install prefix to libdvdread]),
   [if test "x$with_dvdread" = xno; then
      AC_MSG_ERROR([You must have/use libdvdread])
    fi
@@ -183,12 +183,12 @@ fi
 TMPCFLAGS=$CFLAGS
 CFLAGS="-L$dvd_path/lib"
 
-AC_CHECK_LIB(dvdread, DVDDiscID, 
-  [ DVDREAD_LIBS="-L$dvd_path/lib -R$dvd_path/lib -ldvdread" 
+AC_CHECK_LIB(dvdread, DVDDiscID,
+  [ DVDREAD_LIBS="-L$dvd_path/lib -R$dvd_path/lib -ldvdread"
     DVDREAD_CPPFLAGS=-I$dvd_path/include
   ],
   [
-    AC_CHECK_LIB(dvdread, DVDOpen, 
+    AC_CHECK_LIB(dvdread, DVDOpen,
       [ AC_MSG_ERROR([Upgrade libdvdread to 0.9.4 or later]) ],
       [ AC_MSG_ERROR([Need libdvdread, install it or specify it's location])],
       -L$dvd_path/lib)
@@ -196,9 +196,9 @@ AC_CHECK_LIB(dvdread, DVDDiscID,
 
 CFLAGS=$TMPCFLAGS
 
-AC_ARG_WITH(dvdread-includes, 
+AC_ARG_WITH(dvdread-includes,
   AC_HELP_STRING([--with-dvdread-includes=path],
-              [specify location of libdvdread headers]), 
+              [specify location of libdvdread headers]),
   [DVDREAD_CPPFLAGS=-I$with_dvdread_includes])
 
 dnl if test x"$DVDREAD_CPPFLAGS" = x"-I/usr/local/include"; then
@@ -215,9 +215,9 @@ DVDREAD_CPPFLAGS="-D_LARGEFILE64_SOURCE $DVDREAD_CPPFLAGS"
 saved_CPPFLAGS=$CPPFLAGS
 dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
 CPPFLAGS="-w $CPPFLAGS $DVDREAD_CPPFLAGS"
-AC_CHECK_HEADER(dvdread/dvd_reader.h,, 
+AC_CHECK_HEADER(dvdread/dvd_reader.h,,
   [ AC_MSG_WARN([Can not find dvd_reader.h, need the libdvdread headers])
-    AC_MSG_ERROR([Install the headers and/or specify their location]) 
+    AC_MSG_ERROR([Install the headers and/or specify their location])
   ])
 CPPFLAGS=$saved_CPPFLAGS
 
@@ -245,7 +245,7 @@ AC_ARG_WITH(libmlib,
 if test "x$mlib_path" != xno; then
   saved_CPPFLAGS=$CFLAGS
   CFLAGS="$CFLAGS -L$mlib_path/lib"
-  AC_CHECK_LIB(mlib, mlib_VideoDCT8x8_S16_S16, 
+  AC_CHECK_LIB(mlib, mlib_VideoDCT8x8_S16_S16,
 	       [ MLIB_LIBS="-L$mlib_path/lib -R$mlib_path/lib -lmlib"
                  MLIB_CPPFLAGS=-I$mlib_path/include
                  have_mlib=yes
@@ -263,9 +263,9 @@ if test "x$have_mlib" = xyes; then
   saved_CPPFLAGS=$CPPFLAGS
   dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
   CPPFLAGS="-w $CPPFLAGS $MLIB_CPPFLAGS"
-  AC_CHECK_HEADER(mlib_types.h,, 
+  AC_CHECK_HEADER(mlib_types.h,,
     [ AC_MSG_WARN([Can not find mlib_types.h, need the mediaLib headers])
-      AC_MSG_ERROR([Install the headers and/or specify their location]) 
+      AC_MSG_ERROR([Install the headers and/or specify their location])
     ])
   CPPFLAGS=$saved_CPPFLAGS
 fi
@@ -289,9 +289,9 @@ dnl liba52
 dnl ---------------------------------------------------------
 
 a52_path=""
-AC_ARG_WITH(liba52, 
+AC_ARG_WITH(liba52,
   AC_HELP_STRING([--with-liba52=path],
-                 [specify the install prefix to liba52 (a52dec)]), 
+                 [specify the install prefix to liba52 (a52dec)]),
   [if test "x$with_liba52" = xno; then
      AC_MSG_ERROR([You must have/use a52dec])
    fi
@@ -311,20 +311,20 @@ TMPCFLAGS=$CFLAGS
 CFLAGS="-L$a52_path/lib"
 
 dnl a52_free is a new function in 0.7.3
-AC_CHECK_LIB(a52, a52_free, 
-  [ 
-    A52_LIBS="-L$a52_path/lib -R$a52_path/lib -la52" 
+AC_CHECK_LIB(a52, a52_free,
+  [
+    A52_LIBS="-L$a52_path/lib -R$a52_path/lib -la52"
     A52_CPPFLAGS=-I$a52_path/include
   ],
   [
     if test "x$have_mlib" = xyes; then
-      AC_CHECK_LIB(a52, a52_init, 
+      AC_CHECK_LIB(a52, a52_init,
         [ AC_MSG_ERROR([You have liba52 0.7.2 or earlier, need 0.7.3 or later])
         ],
         [ AC_MSG_ERROR([Need liba52, install a52dec or specify it's location])
         ], -L$a52_path/lib -L$mlib_path/lib -lmlib -lm)
     else
-      AC_CHECK_LIB(a52, a52_init, 
+      AC_CHECK_LIB(a52, a52_init,
         [ AC_MSG_ERROR([You have liba52 0.7.2 or earlier, need 0.7.3 or later])
         ],
         [ AC_MSG_ERROR([Need liba52, install a52dec or specify it's location])
@@ -334,9 +334,9 @@ AC_CHECK_LIB(a52, a52_free,
 
 CFLAGS=$TMPCFLAGS
 
-AC_ARG_WITH(liba52-includes, 
+AC_ARG_WITH(liba52-includes,
   AC_HELP_STRING([--with-liba52-includes=path],
-                 [specify location of liba52 headers]), 
+                 [specify location of liba52 headers]),
   [A52_CPPFLAGS=-I$with_liba52_includes])
 
 dnl update to test for 0.7.2 / 0.7.3 MM_ACCEL_DJBFFT ?
@@ -351,9 +351,9 @@ fi
 saved_CPPFLAGS=$CPPFLAGS
 dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
 CPPFLAGS="-w $CPPFLAGS $A52_CPPFLAGS"
-AC_CHECK_HEADER(a52dec/a52.h,, 
+AC_CHECK_HEADER(a52dec/a52.h,,
     [ AC_MSG_WARN([Can not find a52dec/a52.h, need the liba52 headers])
-      AC_MSG_ERROR([Install a52dec(-dev) and/or specify it's location]) 
+      AC_MSG_ERROR([Install a52dec(-dev) and/or specify it's location])
     ])
 CPPFLAGS=$saved_CPPFLAGS
 
@@ -369,9 +369,9 @@ dnl libmad
 dnl ---------------------------------------------------------
 
 mad_path=""
-AC_ARG_WITH(libmad, 
+AC_ARG_WITH(libmad,
   AC_HELP_STRING([--with-libmad=path],
-                 [specify the install prefix to libmad]), 
+                 [specify the install prefix to libmad]),
   [if test "x$with_libmad" = xno; then
      AC_MSG_ERROR([You must have/use libmad])
    fi
@@ -390,26 +390,26 @@ fi
 TMPCFLAGS=$CFLAGS
 CFLAGS="-L$mad_path/lib"
 
-AC_CHECK_LIB(mad, mad_frame_decode, 
-  [ 
-    MAD_LIBS="-L$mad_path/lib -R$mad_path/lib -lmad" 
+AC_CHECK_LIB(mad, mad_frame_decode,
+  [
+    MAD_LIBS="-L$mad_path/lib -R$mad_path/lib -lmad"
     MAD_CPPFLAGS=-I$mad_path/include
   ],[AC_MSG_ERROR([Need libmad, install it or specify it's location])],
     [-L$mad_path/lib])
 
 CFLAGS=$TMPCFLAGS
 
-AC_ARG_WITH(libmad-includes, 
+AC_ARG_WITH(libmad-includes,
   AC_HELP_STRING([--with-libmad-includes=path],
-                 [specify location of libmad headers]), 
+                 [specify location of libmad headers]),
   [MAD_CPPFLAGS=-I$with_libmad_includes])
 
 saved_CPPFLAGS=$CPPFLAGS
 dnl -w added to shutup GCC3.1's cpp warning about -I/usr/local
 CPPFLAGS="-w $CPPFLAGS $MAD_CPPFLAGS"
-AC_CHECK_HEADER(mad.h,, 
+AC_CHECK_HEADER(mad.h,,
     [ AC_MSG_WARN([Can not find mad.h, need the libmad headers])
-      AC_MSG_ERROR([Install libmad and/or specify it's location]) 
+      AC_MSG_ERROR([Install libmad and/or specify it's location])
     ])
 CPPFLAGS=$saved_CPPFLAGS
 
@@ -452,7 +452,7 @@ dnl check for headers.. only define LIBOGLEAO_OSS if library and headers found.
     esac
 fi
 
-dnl check for openbsd audio 
+dnl check for openbsd audio
 AC_ARG_ENABLE([obsdaudio],
     [  --disable-obsdaudio     make a version not using OpenBSD audio])
 if test "x$enable_obsdaudio" != xno; then
@@ -492,7 +492,7 @@ if test "x$enable_alsa" != xno; then
     *-linux*)
         AC_MSG_CHECKING([for alsa version])
         AC_EGREP_CPP([AP_maGiC_VALUE],
-          [ 
+          [
 #include <sys/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
 #if (SND_LIB_MAJOR==0 && SND_LIB_MINOR==5)
@@ -520,11 +520,11 @@ AP_maGiC_VALUE
                 AC_MSG_RESULT([found latest])
               ],
 	      [
-		AC_MSG_RESULT([no])	
+		AC_MSG_RESULT([no])
 	      ])
           ])
         if test "x$have_alsa_final" = x"yes"; then
-                    dnl which symbol should we check for? 
+                    dnl which symbol should we check for?
           AC_CHECK_LIB([asound],[main],
                        [ AC_DEFINE([LIBOGLEAO_ALSA],,
                                    [libogleao ALSA audio support])
@@ -561,7 +561,7 @@ dnl XF86VidMode
 dnl ---------------------------------------------------------
 
 use_xf86vidmode=yes
-AC_ARG_ENABLE(xf86vidmode, 
+AC_ARG_ENABLE(xf86vidmode,
   [  --disable-xf86vidmode	  disable the use of XF86VidMode ],
   [if test "x$enableval" != xyes; then
      use_xf86vidmode=no
@@ -569,16 +569,16 @@ AC_ARG_ENABLE(xf86vidmode,
 if test "x$use_xf86vidmode" = xyes; then
   saved_CPPFLAGS=$CPPFLAGS
   CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-  AC_CHECK_HEADER([X11/extensions/xf86vmode.h], 
-                  [xf86vidmode_header=yes], 
+  AC_CHECK_HEADER([X11/extensions/xf86vmode.h],
+                  [xf86vidmode_header=yes],
                   [xf86vidmode_header=no],
                   [#include <X11/Xlib.h>])
   CPPFLAGS=$saved_CPPFLAGS
-  AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryExtension, 
+  AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryExtension,
 	       [ AC_DEFINE([HAVE_XF86VIDMODE], 1, [X11 supports XF86VidMode])
 		 XF86VIDMODE_LIBS="-lXxf86vm"
-	        ], 
-	       [AC_MSG_WARN([You won't be able to use XF86VidMode])], 
+	        ],
+	       [AC_MSG_WARN([You won't be able to use XF86VidMode])],
 	       [$X_LIBS -lX11 -lXext $X_EXTRA_LIBS])
 fi
 AC_SUBST(XF86VIDMODE_LIBS)
@@ -593,7 +593,7 @@ dnl Xinerama
 dnl ---------------------------------------------------------
 
 use_xinerama=yes
-AC_ARG_ENABLE(xinerama, 
+AC_ARG_ENABLE(xinerama,
   [  --disable-xinerama	  disable the use of Xinerama ],
   [if test "x$enableval" != xyes; then
      use_xinerama=no
@@ -601,16 +601,16 @@ AC_ARG_ENABLE(xinerama,
 if test "x$use_xinerama" = xyes; then
   saved_CPPFLAGS=$CPPFLAGS
   CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-  AC_CHECK_HEADER([X11/extensions/Xinerama.h], 
-                  [xinerama_header=yes], 
+  AC_CHECK_HEADER([X11/extensions/Xinerama.h],
+                  [xinerama_header=yes],
                   [xinerama_header=no],
                   [#include <X11/Xlib.h>])
   CPPFLAGS=$saved_CPPFLAGS
-  AC_CHECK_LIB(Xinerama, XineramaQueryExtension, 
+  AC_CHECK_LIB(Xinerama, XineramaQueryExtension,
 	       [ AC_DEFINE([HAVE_XINERAMA], 1, [X11 supports Xinerama])
 		 XINERAMA_LIBS="-lXinerama"
-	        ], 
-	       [AC_MSG_WARN([You won't be able to use Xinerama])], 
+	        ],
+	       [AC_MSG_WARN([You won't be able to use Xinerama])],
 	       [$X_LIBS -lX11 -lXext $X_EXTRA_LIBS])
 fi
 AC_SUBST(XINERAMA_LIBS)
@@ -642,7 +642,7 @@ solaris*)
 	DEFAULT_DVD_DEVICE="/cdrom/cdrom0"
 	;;
 linux*)
-	DEFAULT_DVD_DEVICE="/dev/dvd"
+	DEFAULT_DVD_DEVICE="/dev/sr0"
 	;;
 freebsd*)
 	DEFAULT_DVD_DEVICE="/dev/acd0c"
@@ -664,7 +664,7 @@ bsdi*)
 	DEFAULT_DVD_DEVICE="/dev/sr0c"
 	;;
 hpux*)
-	DEFAULT_DVD_DEVICE="/dev/dvd"
+	DEFAULT_DVD_DEVICE="/dev/sr0"
 	;;
 *)
 	DEFAULT_DVD_DEVICE=""
@@ -740,7 +740,7 @@ powerpc|ppc)
 	  O_CFLAGS="$O_CFLAGS -fomit-frame-pointer -funroll-loops"
 dnl is the right? needed? use just -m7400 ? need new gcc for that..
 dnl is there a -mcpu -march flag that we should use?
-dnl should be a try compile on this line.. 
+dnl should be a try compile on this line..
 	  XCFLAGS="-Wa,-m7400"
 dnl that sets USE_ALTIVEC depending on the success
 	  USE_ALTIVEC=yes
@@ -754,7 +754,7 @@ alphaev6|alphaev67|alphaev68|alphaev7)
 	fi
 esac
 
-AC_ARG_ENABLE(altivec, 
+AC_ARG_ENABLE(altivec,
   [  --disable-altivec       disable the use of Altivec (G4+)],
   [if test "x$enableval" != xyes; then
     USE_ALTIVEC=
@@ -765,7 +765,7 @@ if test "x$USE_ALTIVEC" = xyes; then
   CFLAGS="$XCFLAGS $CFLAGS"
 fi
 
-AC_ARG_ENABLE(mmx, 
+AC_ARG_ENABLE(mmx,
   [  --disable-mmx           disable the use of MMX (x86)],
   [if test "x$enableval" != xyes; then
      USE_MMX=
@@ -802,16 +802,16 @@ TOP_INCLUDES='-I$(top_srcdir) -I$(top_srcdir)/include'
 AC_SUBST(TOP_INCLUDES)
 
 
-AC_OUTPUT(Makefile 
-ogle/Makefile 
-include/Makefile 
-common/Makefile 
-ctrl/Makefile 
-ac3/Makefile 
-libogleao/Makefile 
-mpeg2_video/Makefile 
-vmg/Makefile 
-mpeg2_program/Makefile 
+AC_OUTPUT(Makefile
+ogle/Makefile
+include/Makefile
+common/Makefile
+ctrl/Makefile
+ac3/Makefile
+libogleao/Makefile
+mpeg2_video/Makefile
+vmg/Makefile
+mpeg2_program/Makefile
 scripts/Makefile
 scripts/ogle
 doc/Makefile
@@ -828,7 +828,7 @@ if test "x$prefix" != xNONE; then
   echo "  prefix: $prefix"
 else
   echo "  prefix: $ac_default_prefix"
-fi  
+fi
 
 echo ""
 
