@@ -79,7 +79,7 @@ $HOME/.oglerc
 .SH "SEE ALSO"
 oglerc(5)
 .SH NOTE
-For more information please visit http://www.dtek.chalmers.se/~dvd/
+For more information please visit https://dvds.beandog.org/doku.php?id=ogle
 .SH AUTHORS
 Björn Englund <d4bjorn@dtek.chalmers.se>
 .br
@@ -91,7 +91,7 @@ Martin Norbäck <d95mback@dtek.chalmers.se>
 .br
 with contibutions from many others on the net.
 .SH BUGS
-Please report bugs to <dvd@dtek.chalmers.se>.
+Please report bugs to https://github.com/beandog/ogle/issues
 .SH COPYRIGHT
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
