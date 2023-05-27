@@ -7,18 +7,18 @@ Playing a DVD
   containing the files of a dvd. (see ogle_gui examples below)
 
 Ogle GUI
-  If you install the ogle_gui package you will also have access to a 
+  If you install the ogle_gui package you will also have access to a
   graphical user interface
   You start the GUI with 'ogle' _not_ ogle_gui.
-  In the menu of ogle_gui which will pop up you choose open and 
+  In the menu of ogle_gui which will pop up you choose open and
   type the device name of your dvd drive
   /dev/hdc or wherever it is on your system
 
   or the path to a copy of the dvd on your hard drive
-  /usr/dvdcopy/VIDEO_TS 
+  /usr/dvdcopy/VIDEO_TS
 
   or the path to the mounted dvd
-  /mnt/dvd or /mnt/dvd/VIDEO_TS 
+  /mnt/dvd or /mnt/dvd/VIDEO_TS
 
   or choose open disc in the menu
   which will open /dev/dvd which should point to your dvd device.
@@ -28,9 +28,9 @@ Ogle GUI
 Solaris
   If you have a FFB2 frame buffer (a Creator 3D) then you can use it
 hardware yuv2rgb to gain faster playback speed.  This is still
-exprimental code be warned.  Enable it by setting the environment 
+exprimental code be warned.  Enable it by setting the environment
 variable USE_FFB2_YUV2RGB.
 
 
 For more information please read the man page 'man ogle' and 'man oglerc'
-or visit http://www.dtek.chalmers.se/~dvd/
+or visit https://github.com/beandog/ogle
