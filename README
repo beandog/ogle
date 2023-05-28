@@ -38,3 +38,5 @@ If you do not have '/dev/dsp', then load the module 'snd-pcm-oss'.
 
 For more information please read the man page 'man ogle' and 'man oglerc'
 or visit https://github.com/beandog/ogle
+
+Original site: https://web.archive.org/web/20051219225924/http://www.dtek.chalmers.se/groups/dvd/index.shtml
