@@ -121,21 +121,21 @@ static event_handler_t *eh_head = NULL;
 int register_event_handler(int(*eh)(MsgEventQ_t *, MsgEvent_t *))
 {
   event_handler_t *eh_ptr;
-  
+
   eh_ptr = malloc(sizeof(event_handler_t));
   eh_ptr->next = eh_head;
   eh_ptr->eh = eh;
   eh_head = eh_ptr;
-  
+
   return 0;
 }
 
 int event_handler(MsgEventQ_t *q, MsgEvent_t *ev)
 {
   event_handler_t *eh_ptr;
-  
+
   eh_ptr = eh_head;
-  
+
   while(eh_ptr != NULL) {
     if(eh_ptr->eh(q, ev)) {
       return 1;
@@ -150,9 +150,9 @@ int event_handler(MsgEventQ_t *q, MsgEvent_t *ev)
 void wait_for_q_attach(void)
 {
   MsgEvent_t ev;
-  
+
   //DNOTE("waiting for attachq\n");
-  
+
   while(ev.type != MsgEventQAttachQ) {
     if(MsgNextEventInterruptible(msgq, &ev) == -1) {
       switch(errno) {
@@ -174,7 +174,7 @@ void wait_for_q_attach(void)
 static int attach_ctrl_shm(int shmid)
 {
   char *shmaddr;
-  
+
   if(ctrl_data_shmid) {
     return 0;
   }
@@ -185,12 +185,12 @@ static int attach_ctrl_shm(int shmid)
       perror("shmat");
       return -1;
     }
-    
+
     ctrl_data_shmid = shmid;
     ctrl_data = (ctrl_data_t*)shmaddr;
     ctrl_time = (ctrl_time_t *)(shmaddr+sizeof(ctrl_data_t));
-  }    
-  
+  }
+
   return 0;
 }
 
@@ -210,9 +210,9 @@ static int attach_data_q(int q_shmid, data_q_t *data_q)
 #ifdef HAVE_XV
   yuv_image_t *reserv_image;
 #endif
-  
+
   //DNOTE("attach_data_q: q_shmid: %d\n", q_shmid);
-  
+
   if(q_shmid < 0) {
     ERROR("%s", "attach_data_q(), q_shmid < 0\n");
     return -1;
@@ -240,20 +240,20 @@ static int attach_data_q(int q_shmid, data_q_t *data_q)
     perror("shmat");
     return -1;
   }
-    
+
   data_head = (data_buf_head_t *)data_shmaddr;
-  
-  data_elems = (picture_data_elem_t *)(data_shmaddr + 
+
+  data_elems = (picture_data_elem_t *)(data_shmaddr +
 				       sizeof(data_buf_head_t));
-  
+
   //TODO ugly hack
 #ifdef HAVE_XV
-  image_bufs = 
+  image_bufs =
     malloc((data_head->nr_of_dataelems+1) *
 	   sizeof(yuv_image_t));
   for(n = 0; n < (data_head->nr_of_dataelems+1); n++) {
 #else
-  image_bufs = 
+  image_bufs =
     malloc(data_head->nr_of_dataelems * sizeof(yuv_image_t));
   for(n = 0; n < data_head->nr_of_dataelems; n++) {
 #endif
@@ -293,9 +293,9 @@ static int detach_data_q(int q_shmid, data_q_t **data_q_head)
   MsgEventClient_t client;
   data_q_t **data_q_p;
   data_q_t *data_q_tmp;
-  
+
   //DNOTE("detach_data_q q_shmid: %d\n", q_shmid);
-  
+
   for(data_q_p=data_q_head;
       *data_q_p != NULL && (*data_q_p)->q_head->qid != q_shmid;
       data_q_p = &(*data_q_p)->next) {
@@ -312,7 +312,7 @@ static int detach_data_q(int q_shmid, data_q_t **data_q_head)
     ERROR("%s", "detach_data_q data_head");
     perror("shmdt");
   }
-  
+
   if(shmdt((char *)(*data_q_p)->q_head) == -1) {
     ERROR("%s", "detach_data_q q_head");
     perror("shmdt");
@@ -329,7 +329,7 @@ static int detach_data_q(int q_shmid, data_q_t **data_q_head)
 
   ev.type = MsgEventQQDetached;
   ev.detachq.q_shmid = q_shmid;
-  
+
   if(MsgSendEvent(msgq, client, &ev, 0) == -1) {
     DPRINTF(1, "vo: qdetached\n");
   }
@@ -343,15 +343,15 @@ static int append_picture_q(int q_shmid, data_q_t **data_q)
   data_q_t **data_q_p;
 
   for(data_q_p = data_q; *data_q_p != NULL; data_q_p =&(*data_q_p)->next);
-    
+
   *data_q_p = malloc(sizeof(data_q_t));
-  
+
   if(attach_data_q(q_shmid, *data_q_p) == -1) {
     free(*data_q_p);
     *data_q_p = NULL;
     return -1;
   }
-  
+
   return 0;
 }
 
@@ -370,9 +370,9 @@ static int attach_picture_buffer(int q_shmid)
 
 static int detach_picture_q(int shmid)
 {
-  
+
   //DNOTE("detach_picture_q q_shmid: %d\n", shmid);
-  
+
   detach_data_q(shmid, &data_q_head);
 
   display_reset();
@@ -407,7 +407,7 @@ static void redraw_screen(void)
   }
 
   if(last_image_buf != NULL) {
-    display(last_image_buf);    
+    display(last_image_buf);
   }
   redraw_done();
 }
@@ -430,7 +430,7 @@ void screenshot_request(ScreenshotMode_t mode)
 static int handle_events(MsgEventQ_t *q, MsgEvent_t *ev)
 {
   MsgEvent_t s_ev;
-  
+
   switch(ev->type) {
   case MsgEventQNotify:
     if((cur_data_q->q_head != NULL) &&
@@ -453,16 +453,16 @@ static int handle_events(MsgEventQ_t *q, MsgEvent_t *ev)
     break;
   case MsgEventQDetachQ:
     detach_picture_q(ev->detachq.q_shmid);
-    
+
     s_ev.type = MsgEventQQDetached;
     s_ev.detachq.q_shmid = ev->detachq.q_shmid;
-    
+
     if(MsgSendEvent(msgq, ev->detachq.client, &s_ev, 0) == -1) {
       DPRINTF(1, "vo: qdetached\n");
     }
-    
+
     wait_for_q_attach();
-    
+
     break;
   case MsgEventQCtrlData:
     attach_ctrl_shm(ev->ctrldata.shmid);
@@ -471,7 +471,7 @@ static int handle_events(MsgEventQ_t *q, MsgEvent_t *ev)
     if((ev->gntcapability.capability & UI_DVD_GUI) == UI_DVD_GUI)
       gui_client = ev->gntcapability.capclient;
     else
-      ERROR("capabilities not requested (%d)\n", 
+      ERROR("capabilities not requested (%d)\n",
               ev->gntcapability.capability);
     break;
   case MsgEventQSetAspectModeSrc:
@@ -510,14 +510,14 @@ static int handle_events(MsgEventQ_t *q, MsgEvent_t *ev)
   return 1;
 }
 
-void wait_until_handler(int sig) 
+void wait_until_handler(int sig)
 {
   end_of_wait = 1;
   return;
 }
 
 
-void alarm_handler(int sig) 
+void alarm_handler(int sig)
 {
   end_of_wait = 1;
   if(last_image_buf)
@@ -536,11 +536,11 @@ static clocktime_t wait_until(clocktime_t *scr, sync_point_t *sp)
 
   timer.it_interval.tv_sec = 0;
   timer.it_interval.tv_usec = 0;
-  
+
   while(1) {
-    
+
     end_of_wait = 0;
-    
+
     clocktime_get(&real_time);
 
     if(TIME_S(real_time) - TIME_S(last_ss_disable) > 50) {
@@ -555,7 +555,7 @@ static clocktime_t wait_until(clocktime_t *scr, sync_point_t *sp)
       display_reset_screensaver();
       TIME_S(last_ss_disable) = TIME_S(real_time);
     }
-    
+
 
     calc_realtime_left_to_scrtime(&time_left, &real_time,
 				  scr, sp);
@@ -580,14 +580,14 @@ static clocktime_t wait_until(clocktime_t *scr, sync_point_t *sp)
     } else if(TIME_SS(time_left) > min_time_left) {
       // less than 100ms but more than clktck/2 left, lets wait
       struct timespec sleeptime;
- 
+
 #if 0
       timer.it_value.tv_sec = 0;
       timer.it_value.tv_usec = TIME_SS(time_left)/(CT_FRACTION/1000000);
-      
+
       act.sa_handler = wait_until_handler;
       act.sa_flags = 0;
-      
+
       sigaction(SIGALRM, &act, &oact);
       setitimer(ITIMER_REAL, &timer, NULL);
 #endif
@@ -604,11 +604,11 @@ static clocktime_t wait_until(clocktime_t *scr, sync_point_t *sp)
 
       return time_left;
     }
-  
+
     while(!end_of_wait) {
       MsgEvent_t ev;
-      
-      // check any events that arrives 
+
+      // check any events that arrives
       if(MsgNextEventInterruptible(msgq, &ev) == -1) {
 	switch(errno) {
 	case EINTR:
@@ -636,10 +636,10 @@ static clocktime_t wait_until(clocktime_t *scr, sync_point_t *sp)
     timer.it_value.tv_sec = 0; // disable timer
     timer.it_value.tv_usec = 0; // disable timer
     setitimer(ITIMER_REAL, &timer, NULL);
-    
+
     sigaction(SIGALRM, &oact, NULL);
   }
-  
+
 }
 
 
@@ -653,7 +653,7 @@ static int get_next_picture_q_elem_id(data_q_t *data_q)
   timer.it_interval.tv_usec = 0;
   timer.it_value.tv_sec = 0;
   timer.it_value.tv_usec = 0;
-  
+
   elem = data_q->q_head->read_nr;
   //DNOTE("get_next_picture_q_elem_id: elem: %d\n", elem);
   data_q->q_head->read_nr =
@@ -708,7 +708,7 @@ static void release_picture(int q_elem_id, data_q_t *data_q)
   MsgEvent_t ev;
   int msg_sent = 0;
   int id;
-  
+
   id = data_q->q_elems[q_elem_id].data_elem_index;
   /*
   DNOTE("release_picture: elem: %d, buf: %d\n",
@@ -761,18 +761,18 @@ data_q_t *get_next_data_q(data_q_t **head, data_q_t *cur_q)
 {
   data_q_t **data_q;
   data_q_t *tmp_q;
-  
+
   for(data_q = head;
       *data_q != NULL && *data_q != cur_q;
       data_q = &(*data_q)->next);
-  
+
   if(*data_q == NULL) {
     ERROR("%s", "get_next_data_q(), couldn't find cur_q\n");
     return NULL;
   }
 
   tmp_q = (*data_q)->next; //pointer to the next q
-  
+
   if(!(*data_q)->in_use) {
     display_reset();
     detach_data_q((*data_q)->q_head->qid, head);
@@ -789,7 +789,7 @@ data_q_t *get_next_data_q(data_q_t **head, data_q_t *cur_q)
       tmp_q = (*data_q)->next;
     }
   }
-  
+
 
   return tmp_q;
 }
@@ -816,7 +816,7 @@ static void display_process()
 
   int q_elem_id = -1;
   int prev_q_elem_id = -1;
-  
+
   int buf_id = -1;
   int prev_buf_id = -1;
   int old_q_id = -1;
@@ -824,9 +824,9 @@ static void display_process()
   int avg_nr = 23;
   picture_data_elem_t *pinfos;
   data_q_t *old_data_q = NULL;
-  
+
   TIME_S(prefered_time) = 0;
-  
+
   sig.sa_handler = int_handler;
   sig.sa_flags = 0;
   sigaction(SIGINT, &sig, NULL);
@@ -859,7 +859,7 @@ static void display_process()
           last_image_buf = NULL;
 	  old_data_q = NULL;
         }
-	
+
 	cur_data_q = get_next_data_q(&data_q_head, cur_data_q);
       }
 
@@ -871,7 +871,7 @@ static void display_process()
 
     //DNOTE("last_image_buf: %d\n", last_image_buf);
     video_scr_nr = pinfos[buf_id].scr_nr;
-    
+
     // Consume all messages for us and spu_mixer
     if(msgqid != -1) {
       MsgEvent_t ev;
@@ -882,9 +882,9 @@ static void display_process()
 
     if(ctrl_time[pinfos[buf_id].scr_nr].sync_master <= SYNC_VIDEO) {
       ctrl_time[pinfos[buf_id].scr_nr].sync_master = SYNC_VIDEO;
-      
+
       //TODO release scr_nr when done
-      
+
       if(ctrl_time[pinfos[buf_id].scr_nr].offset_valid == OFFSET_NOT_VALID) {
 	if(pinfos[buf_id].PTS_DTS_flags & 0x2) {
 
@@ -908,7 +908,7 @@ static void display_process()
       */
       prev_scr_nr = pinfos[buf_id].scr_nr;
     }
-    
+
 
     PTS_TO_CLOCKTIME(frame_interval, pinfos[buf_id].frame_interval);
 
@@ -923,16 +923,16 @@ static void display_process()
 	flush_to_scrid = -1;
       }
     }
-    
+
     if(flush_to_scrid == -1) {
       if(TIME_S(prefered_time) == 0 || TIME_SS(frame_interval) == 1) {
 	prefered_time = real_time;
       } else if(ctrl_time[pinfos[buf_id].scr_nr].offset_valid == OFFSET_NOT_VALID) {
 	prefered_time = real_time;
-      } else /* if(TIME_S(pinfos[buf_id].pts_time) != -1) */ { 
+      } else /* if(TIME_S(pinfos[buf_id].pts_time) != -1) */ {
 	clocktime_t pts_time;
 	PTS_TO_CLOCKTIME(pts_time, pinfos[buf_id].PTS);
-	
+
 	/*
 	calc_realtime_from_scrtime(&prefered_time, &pts_time,
 				   &ctrl_time[pinfos[buf_id].scr_nr].sync_point);
@@ -941,7 +941,7 @@ static void display_process()
 	wait_time =
 	  wait_until(&pts_time, &ctrl_time[pinfos[buf_id].scr_nr].sync_point);
 
-	
+
       }
     }
     /**
@@ -950,7 +950,7 @@ static void display_process()
 
 
     last_image_buf = &cur_data_q->image_bufs[buf_id];
-    
+
     // release the old picture, if it's not done already
     if(prev_buf_id != -1) {
       if(old_q_id != cur_data_q->q_head->qid) {
@@ -966,7 +966,7 @@ static void display_process()
     } else if(prev_q_elem_id != -1) {
       //DNOTE("release2 buf_id: %d\n", prev_buf_id);
       release_picture(prev_q_elem_id, cur_data_q);
-    }      
+    }
     //detach old q if any
     if(old_q_id != cur_data_q->q_head->qid) {
       if(old_q_id != -1) {
@@ -982,7 +982,7 @@ static void display_process()
 		   cur_data_q->data_head->shmid,
 		   (char *)cur_data_q->data_head);
     }
-    
+
     prev_q_elem_id = q_elem_id;
     prev_buf_id = buf_id;
     old_q_id = cur_data_q->q_head->qid;
@@ -995,7 +995,7 @@ static void display_process()
       // more than 60 ms late, drop decoded pictures
       drop = 1;
     }
-    
+
     if(!drop) {
       frame_nr++;
       avg_nr++;
@@ -1004,7 +1004,7 @@ static void display_process()
       avg_nr = 0;
       oavg_time = avg_time;
       clocktime_get(&avg_time);
-      
+
       fprintf(stderr, "display: frame rate: %.3f fps\n",
 	      200.0/(((double)TIME_S(avg_time)+
 		      (double)TIME_SS(avg_time)/CT_FRACTION)-
@@ -1016,7 +1016,7 @@ static void display_process()
     /*
     clocktime_get(&real_time2);
     timesub(&diff, &prefered_time, &real_time2);
-    
+
     fprintf(stderr, "diff: %d.%+010ld\n",
 	    TIME_S(diff), TIME_SS(diff));
     */
@@ -1060,7 +1060,7 @@ static int bsdi_getticks(void)
   int mib[2];
   size_t olen = sizeof (struct clockinfo);
   struct clockinfo ci;
-  
+
   mib[0] = CTL_KERN;
   mib[1] = KERN_CLOCKRATE;
   if (sysctl(mib, 2, &ci, &olen, NULL, 0) < 0) {
@@ -1074,14 +1074,14 @@ static int bsdi_getticks(void)
 
 static void usage()
 {
-  fprintf(stderr, "Usage: %s  [-m <msgid>]\n", 
+  fprintf(stderr, "Usage: %s  [-m <msgid>]\n",
 	  program_name);
 }
 
 int main(int argc, char **argv)
 {
   MsgEvent_t ev;
-  int c; 
+  int c;
 
   program_name = argv[0];
   GET_DLEVEL();
@@ -1105,7 +1105,7 @@ int main(int argc, char **argv)
       return 1;
     }
   }
-  
+
   errno = 0;
 
 #ifdef __bsdi__
@@ -1113,7 +1113,7 @@ int main(int argc, char **argv)
 #else
   clk_tck = sysconf(_SC_CLK_TCK);
 #endif
-  
+
   if(clk_tck <= 0) {
     // linux returns 0 as error also
     if(errno != 0 && clk_tck == -1) {
@@ -1130,34 +1130,34 @@ int main(int argc, char **argv)
   DNOTE("CLK_TCK: %ld\n", clk_tck);
 
   if(msgqid != -1) {
-    
+
     if((msgq = MsgOpen(msgqid)) == NULL) {
       FATAL("%s", "couldn't get message q\n");
       exit(1);
     }
-    
+
     register_event_handler(handle_events);
     init_spu();
 
     ev.type = MsgEventQRegister;
     ev.registercaps.capabilities = VIDEO_OUTPUT | DECODE_DVD_SPU;
-    
+
     if(MsgSendEvent(msgq, CLIENT_RESOURCE_MANAGER, &ev, 0) == -1) {
       DPRINTF(1, "vo: register capabilities\n");
       exit(1); //TODO clean up and exit
     }
-    
+
     //DNOTE("sent caps\n");
-    
+
     ev.type = MsgEventQReqCapability;
     ev.reqcapability.capability = UI_DVD_GUI;
     if(MsgSendEvent(msgq, CLIENT_RESOURCE_MANAGER, &ev, 0) == -1) {
       FATAL("%s", "didn't get dvd_gui cap\n");
       exit(1); //TODO clean up and exit
     }
-    
+
     //DNOTE("waiting for attachq\n");
-    
+
     while(ev.type != MsgEventQAttachQ) {
       if(MsgNextEventInterruptible(msgq, &ev) == -1) {
 	switch(errno) {
@@ -1176,11 +1176,11 @@ int main(int argc, char **argv)
     //DNOTE("got attachq\n");
 
     display_process();
-    
+
   } else {
     fprintf(stderr, "what?\n");
   }
-  
+
   exit(0);
 }
 
