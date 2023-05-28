@@ -36,6 +36,26 @@ Audio support
 Depending on your Linux system, you may need kernel support for it.
 If you do not have '/dev/dsp', then load the module 'snd-pcm-oss'.
 
+Navigation and control
+',', slower, in slow-motion sound will be muted
+'p', play, normal playback speed
+'.', faster, in fast-forward sound will be muted
+' ' (space), pause / unpause
+'>', skip to the next chapter
+'<', skip to the previous chapter
+'c', resume (if you have jumped to a menu from the movie)
+'f' 'F', toggle between fullscreen and window mode
+'q' 'Q', exit the player
+'t', jumps to the Title menu
+'r', jumps to the Root menu
+'a', jumps to the Audio menu
+'A', jumps to the Angle menu
+'P', jumps to the PTT (Chapter) menu
+'S', jumps to the Subpicture menu
+Non configurable keys:
+'i', saves a screen shoot (as screenshoot.jpg in pwd)
+'I', saves a screen shoot with the subpicture overlay intact
+
 For more information please read the man page 'man ogle' and 'man oglerc'
 or visit https://github.com/beandog/ogle
 
